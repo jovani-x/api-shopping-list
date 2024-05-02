@@ -14,3 +14,28 @@ export interface ICard {
   products?: IProduct[];
   isDone: boolean;
 }
+
+export interface ILoginValues {
+  userName: string;
+  password: string;
+}
+
+export interface IUser extends ILoginValues {
+  email: string;
+  accessToken?: string | null;
+  // role?: RolesType
+  // expiredToken?: Date
+}
+
+export type AuthUser = {
+  userName: string | null;
+  accessToken: string | null;
+};
+
+export type UserServiceType = {
+  getUserByName: Function;
+  isUserAuthentic: Function;
+  addUser: Function;
+  updateToken: Function;
+  isAuthToken: Function;
+};
