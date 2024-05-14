@@ -1,4 +1,3 @@
-import { UserServiceType } from "../data/types.js";
 import { getTranslation } from "../lib/utils.js";
 import {
   generateToken,
@@ -12,13 +11,12 @@ import {
   isUserAuthentic,
   getAccessDeniedResponse,
   expiredTokenCookie,
-  userStore,
   prepareTokenCookie,
 } from "../services/authServices.js";
 import { isDevMode } from "../../app.js";
 
 const userController = {
-  signup: (req, res) => {
+  signup: async (req, res) => {
     const newUser = req.body.user;
     const { userName, password, confirmPassword, email } = newUser;
 
@@ -26,17 +24,22 @@ const userController = {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
 
-    if (getUserByName(userName)) {
+    const user = await getUserByName(userName);
+    if (user) {
       return res
         .status(400)
         .json({ message: getTranslation("loginAlreadyExists", { userName }) });
     }
 
-    addUser(newUser);
-    res.status(201).json({
-      userName,
-      message: getTranslation("userHasBeenRegistered", { userName }),
-    });
+    try {
+      const userName = await addUser(newUser);
+      res.status(201).json({
+        userName,
+        message: getTranslation("userHasBeenRegistered", { userName }),
+      });
+    } catch (err) {
+      res.status(500).json({ message: err });
+    }
   },
   signin: async (req, res) => {
     const userName = req.body.userName;
@@ -48,40 +51,46 @@ const userController = {
 
     if (await isUserAuthentic({ userName, password })) {
       const token = generateToken({ userName });
-      await updateToken({ userName, token });
+      try {
+        await updateToken({ userName, token });
 
-      return res
-        .cookie(...prepareTokenCookie({ token }))
-        .status(200)
-        .json({ userName });
+        return res
+          .cookie(...prepareTokenCookie({ token }))
+          .status(200)
+          .json({ userName });
+      } catch (err) {
+        return res.status(500).json({
+          message: err,
+        });
+      }
     } else {
       return res
         .status(401)
         .json({ message: getTranslation("wrongCredentials") });
     }
   },
-  signout: (req, res) => {
+  signout: async (req, res) => {
     const cookies = req.cookies;
     const token = cookies?.[tokenName];
 
-    if (!isAuthToken(token)) {
+    if (!(await isAuthToken(token))) {
       return getAccessDeniedResponse(res);
     }
 
-    const userName = removeToken(token);
+    const userName = await removeToken(token);
     res
       .cookie(...expiredTokenCookie())
       .status(200)
       .json({ message: getTranslation("userHasBeenSignedOut", { userName }) });
   },
-  forget: (req, res) => {
+  forget: async (req, res) => {
     const email = req.body.email;
 
     if (!email) {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
 
-    const user = findUserByEmail(email);
+    const user = await findUserByEmail(email);
     if (!user) {
       return res.status(404).json({
         message: `${getTranslation("noUserExistsWithSuchEmail")}: "${email}"`,
@@ -94,9 +103,6 @@ const userController = {
         { email }
       )}.${isDevMode ? ` (${getTranslation("itDoesNotWorkNow")})` : ""}`,
     });
-  },
-  init: (userService: UserServiceType) => {
-    userStore.init(userService);
   },
 };
 

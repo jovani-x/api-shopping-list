@@ -1,6 +1,8 @@
 import { sha256 } from "js-sha256";
-import { AuthUser, UserServiceType } from "../data/types.js";
+import { AuthUser, IUser } from "../data/types.js";
 import { getTranslation } from "../lib/utils.js";
+
+import { User } from "../models/User.js";
 
 type CookieOptionType = {
   httpOnly?: boolean;
@@ -14,18 +16,11 @@ type CookieOptionType = {
   sameSite?: true | "lax" | "strict" | "none";
 };
 
-export const userStore = {
-  service: null,
-  init: function (service: UserServiceType) {
-    this.service = service;
-  },
-};
-
 const getJWTSecret = () => {
   return process.env.JWT_SECRET || "";
 };
 
-export const tokenName = process.env.VITE_JWT_NAME || "authToken";
+export const tokenName = process.env.JWT_NAME || "authToken";
 
 export const generateToken = ({ userName }: { userName: string }): string => {
   const secret = getJWTSecret();
@@ -83,11 +78,52 @@ export const getAccessDeniedResponse = (response: any) => {
     .json({ message: getTranslation("unauthorizedRequest") });
 };
 
-export const addUser = userStore.service.addUser;
-export const getUserByName = userStore.service.getUserByName;
-export const findUserByEmail = userStore.service.findUserByEmail;
-export const isUserAuthentic = userStore.service.isUserAuthentic;
+export const addUser = async (newUser: IUser) => {
+  await User.create(newUser);
+  return newUser?.userName;
+};
 
-export const updateToken = userStore.service.updateToken;
-export const removeToken = userStore.service.removeToken;
-export const isAuthToken = userStore.service.isAuthToken;
+export const getUserByName = async (userName: string) =>
+  await User.findOne({ userName: userName });
+
+export const findUserByEmail = async (email: string) =>
+  await User.findOne({ email: email });
+
+export const isUserAuthentic = async ({
+  userName,
+  password,
+}: {
+  userName: string;
+  password: string;
+}) => {
+  const user = await User.findOne({ userName: userName });
+  if (!user) return false;
+
+  return user.password === password;
+};
+
+export const updateToken = async ({
+  userName,
+  token,
+}: {
+  userName: string;
+  token: string;
+}) =>
+  await User.findOneAndUpdate({ userName: userName }, { accessToken: token });
+
+export const removeToken = async (token: string) => {
+  const { userName } = decodeToken(token);
+  return await User.findOneAndUpdate(
+    { userName: userName },
+    { accessToken: null }
+  );
+};
+
+export const isAuthToken = async (token: string) => {
+  const { userName, accessToken } = decodeToken(token);
+  const user = !userName ? null : await User.findOne({ userName: userName });
+
+  if (!user?.accessToken) return false;
+
+  return accessToken === user.accessToken;
+};

@@ -5,12 +5,12 @@ const router = express.Router();
 const apiAuthUrl = "";
 
 // login
-router.signin(`${apiAuthUrl}/login`, userController.signin);
+router.post(`${apiAuthUrl}/login`, userController.signin);
 // logout
-router.signout(`${apiAuthUrl}/logout`, userController.signout);
+router.post(`${apiAuthUrl}/logout`, userController.signout);
 // register
-router.signup(`${apiAuthUrl}/register`, userController.signup);
+router.post(`${apiAuthUrl}/register`, userController.signup);
 // forget
-router.forget(`${apiAuthUrl}/forget`, userController.forget);
+router.post(`${apiAuthUrl}/forget`, userController.forget);
 
 export default router;
