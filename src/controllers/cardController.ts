@@ -1,88 +1,101 @@
 import { ICard } from "../data/types.js";
 import { getTranslation } from "../lib/utils.js";
 
-const allCards = new Map<string, ICard>();
+import {
+  getAllCards,
+  getCardById,
+  createCard,
+  updateCard,
+  deleteCard,
+} from "../services/cardServices.js";
 
 export const hasCardType = (card: any): card is ICard => {
-  return (
-    typeof card === "object" &&
-    card.id &&
-    typeof card.id === "string" &&
-    card.name &&
-    typeof card.name === "string"
-  );
+  return typeof card === "object" && card.name && typeof card.name === "string";
 };
 
 const cardController = {
-  getAllCards: (req, res) => {
-    const resObj = { cards: Array.from(allCards.values()) };
-
-    res.status(200).json(resObj);
+  getAllCards: async (_req, res) => {
+    try {
+      const resObj = await getAllCards();
+      res.status(200).json(resObj);
+    } catch (err) {
+      res.status(500).json({
+        message: err,
+      });
+    }
   },
-  getCard: (req, res) => {
+  getCard: async (req, res) => {
     const id = req.params.id;
 
     if (!id) {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
     const cardId = typeof id !== "string" ? id.toString() : id;
-    const card = allCards.get(cardId);
-    if (!card) {
-      return res.status(404).json({
-        message: getTranslation("cardWithIdDoesnotExist", { id: cardId }),
+    try {
+      const card = await getCardById(cardId);
+      if (!card) {
+        return res.status(404).json({
+          message: getTranslation("cardWithIdDoesnotExist", { id: cardId }),
+        });
+      }
+
+      res.status(200).json({ card: card });
+    } catch (err) {
+      res.status(500).json({
+        message: err,
       });
     }
-
-    return res.status(200).json({ card: card });
   },
-  createCard: (req, res) => {
+  createCard: async (req, res) => {
     const newCard = req.body.card;
-    if (newCard && hasCardType(newCard) && !allCards.get(newCard.id)) {
-      allCards.set(newCard.id, newCard);
-      return res.status(201).json({ card: newCard });
-    } else {
-      return res.status(400).json({ message: getTranslation("wrongData") });
+
+    try {
+      if (newCard && hasCardType(newCard)) {
+        const resCard = await createCard(newCard);
+        return res.status(201).json({ card: resCard });
+      } else {
+        return res.status(400).json({ message: getTranslation("wrongData") });
+      }
+    } catch (err) {
+      res.status(500).json({
+        message: err,
+      });
     }
   },
-  updateCard: (req, res) => {
+  updateCard: async (req, res) => {
     const id = req.params.id;
 
     if (!id) {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
     const cardId = typeof id !== "string" ? id.toString() : id;
-    const card = allCards.get(cardId);
-    if (!card) {
-      return res.status(404).json({
-        message: getTranslation("cardWithIdDoesnotExist", { id: cardId }),
-      });
-    }
 
     const newCardAttrs = req.body.card;
-    const updatedCard = { ...newCardAttrs, id: cardId };
-    allCards.set(cardId, updatedCard);
-    res.status(200).json({ card: updatedCard });
+    try {
+      const updatedCard = await updateCard(cardId, newCardAttrs);
+      res.status(200).json({ card: updatedCard });
+    } catch (err) {
+      res.status(500).json({
+        message: err,
+      });
+    }
   },
-  deleteCard: (req, res) => {
+  deleteCard: async (req, res) => {
     const id = req.params.id;
 
     if (!id) {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
     const cardId = typeof id !== "string" ? id.toString() : id;
-    const card = allCards.get(cardId);
-    if (!card) {
-      return res.status(404).json({
-        message: getTranslation("cardWithIdDoesnotExist", { id: cardId }),
+
+    try {
+      const card = await deleteCard(cardId);
+      res.status(200).json({ card });
+    } catch (err) {
+      res.status(500).json({
+        message: err,
       });
     }
-
-    allCards.delete(cardId);
-    res.status(200).json({ card });
-  },
-  init: (cards: ICard[]) => {
-    allCards.clear();
-    cards.map((card) => allCards.set(card.id, card));
   },
 };
 
