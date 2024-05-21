@@ -8,15 +8,20 @@ import {
   updateCard,
   deleteCard,
 } from "../services/cardServices.js";
+import { getUserById } from "../services/friendServices.js";
 
 export const hasCardType = (card: any): card is ICard => {
   return typeof card === "object" && card.name && typeof card.name === "string";
 };
 
 const cardController = {
-  getAllCards: async (_req, res) => {
+  getAllCards: async (req, res) => {
+    const ownerId = req.userId;
+
     try {
-      const resObj = await getAllCards();
+      const owner = await getUserById({ id: ownerId, selectFields: ["cards"] });
+      const cardIds = owner?.cards.map((el) => el.cardId);
+      const resObj = await getAllCards(cardIds);
       res.status(200).json(resObj);
     } catch (err) {
       res.status(500).json({
@@ -48,10 +53,11 @@ const cardController = {
   },
   createCard: async (req, res) => {
     const newCard = req.body.card;
+    const ownerId = req.userId;
 
     try {
       if (newCard && hasCardType(newCard)) {
-        const resCard = await createCard(newCard);
+        const resCard = await createCard(newCard, ownerId);
         return res.status(201).json({ card: resCard });
       } else {
         return res.status(400).json({ message: getTranslation("wrongData") });

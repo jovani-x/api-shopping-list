@@ -2,17 +2,16 @@ import cardController from "../controllers/cardController.js";
 import express from "express";
 
 const router = express.Router();
-const apiCardUrl = "";
 
 // get all cards
-router.get(`${apiCardUrl}/`, cardController.getAllCards);
+router.get("/", cardController.getAllCards);
 // get card
-router.get(`${apiCardUrl}/:id`, cardController.getCard);
+router.get("/:id", cardController.getCard);
 // create card
-router.post(`${apiCardUrl}/new`, cardController.createCard);
+router.post("/new", cardController.createCard);
 // update card
-router.put(`${apiCardUrl}/:id`, cardController.updateCard);
+router.put("/:id", cardController.updateCard);
 // delete
-router.delete(`${apiCardUrl}/:id`, cardController.deleteCard);
+router.delete("/:id", cardController.deleteCard);
 
 export default router;
