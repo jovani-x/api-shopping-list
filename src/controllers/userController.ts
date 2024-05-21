@@ -1,8 +1,7 @@
 import { getTranslation } from "../lib/utils.js";
 import {
   generateToken,
-  updateToken,
-  removeToken,
+  decodeToken,
   isAuthToken,
   tokenName,
   addUser,
@@ -49,39 +48,52 @@ const userController = {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
 
-    if (await isUserAuthentic({ userName, password })) {
-      const token = generateToken({ userName });
-      try {
-        await updateToken({ userName, token });
+    try {
+      const isAuthUser = await isUserAuthentic({ userName, password });
 
+      if (!isAuthUser) {
         return res
-          .cookie(...prepareTokenCookie({ token }))
-          .status(200)
-          .json({ userName });
-      } catch (err) {
-        return res.status(500).json({
-          message: err,
-        });
+          .status(401)
+          .json({ message: getTranslation("wrongCredentials") });
       }
-    } else {
+
+      const user = await getUserByName(userName);
+      if (!user?.id) {
+        return res.status(400).json({ message: getTranslation("wrongData") });
+      }
+
+      const token = generateToken({ userName, userId: user.id });
       return res
-        .status(401)
-        .json({ message: getTranslation("wrongCredentials") });
+        .cookie(...prepareTokenCookie({ token }))
+        .status(200)
+        .json({ userName });
+    } catch (err) {
+      return res.status(500).json({
+        message: err,
+      });
     }
   },
   signout: async (req, res) => {
     const cookies = req.cookies;
     const token = cookies?.[tokenName];
 
-    if (!(await isAuthToken(token))) {
-      return getAccessDeniedResponse(res);
-    }
+    try {
+      if (!(await isAuthToken(token))) {
+        return getAccessDeniedResponse(res);
+      }
 
-    const userName = await removeToken(token);
-    res
-      .cookie(...expiredTokenCookie())
-      .status(200)
-      .json({ message: getTranslation("userHasBeenSignedOut", { userName }) });
+      const userName = await decodeToken(token);
+      return res
+        .cookie(...expiredTokenCookie())
+        .status(200)
+        .json({
+          message: getTranslation("userHasBeenSignedOut", { userName }),
+        });
+    } catch (err) {
+      return res.status(500).json({
+        message: err,
+      });
+    }
   },
   forget: async (req, res) => {
     const email = req.body.email;
@@ -90,19 +102,25 @@ const userController = {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
 
-    const user = await findUserByEmail(email);
-    if (!user) {
-      return res.status(404).json({
-        message: `${getTranslation("noUserExistsWithSuchEmail")}: "${email}"`,
+    try {
+      const user = await findUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({
+          message: `${getTranslation("noUserExistsWithSuchEmail")}: "${email}"`,
+        });
+      }
+
+      return res.status(200).json({
+        message: `${getTranslation(
+          "furtherInstructionsHaveBeenSentToEmailAddress",
+          { email }
+        )}.${isDevMode ? ` (${getTranslation("itDoesNotWorkNow")})` : ""}`,
+      });
+    } catch (err) {
+      return res.status(500).json({
+        message: err,
       });
     }
-
-    res.status(200).json({
-      message: `${getTranslation(
-        "furtherInstructionsHaveBeenSentToEmailAddress",
-        { email }
-      )}.${isDevMode ? ` (${getTranslation("itDoesNotWorkNow")})` : ""}`,
-    });
   },
 };
 

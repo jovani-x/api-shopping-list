@@ -1,7 +1,7 @@
 import { sha256 } from "js-sha256";
 import { AuthUser, IUser } from "../data/types.js";
 import { getTranslation } from "../lib/utils.js";
-
+import { random } from "@lukeed/csprng";
 import { User } from "../models/User.js";
 
 type CookieOptionType = {
@@ -22,10 +22,16 @@ const getJWTSecret = () => {
 
 export const tokenName = process.env.JWT_NAME || "authToken";
 
-export const generateToken = ({ userName }: { userName: string }): string => {
+export const generateToken = ({
+  userName,
+  userId,
+}: {
+  userName: string;
+  userId: string;
+}): string => {
   const secret = getJWTSecret();
   const headers = btoa(JSON.stringify({ alg: "HS256", typ: "JWT" }));
-  const user = btoa(JSON.stringify({ userName }));
+  const user = btoa(JSON.stringify({ userName, userId }));
   const signature = sha256.hmac(secret, `${headers}.${user}`);
   return btoa(`${headers}.${user}.${signature}`);
 };
@@ -35,6 +41,7 @@ export const decodeToken = (encodedToken: string | null): AuthUser => {
     if (!encodedToken) {
       return {
         userName: null,
+        userId: null,
         accessToken: null,
       };
     }
@@ -46,6 +53,7 @@ export const decodeToken = (encodedToken: string | null): AuthUser => {
   } catch (err) {
     return {
       userName: null,
+      userId: null,
       accessToken: null,
     };
   }
@@ -79,7 +87,9 @@ export const getAccessDeniedResponse = (response: any) => {
 };
 
 export const addUser = async (newUser: IUser) => {
-  await User.create(newUser);
+  const dsalt = random(16).toString("hex");
+  const passHash = sha256.hmac(dsalt, newUser.password);
+  await User.create({ ...newUser, password: passHash, dsalt });
   return newUser?.userName;
 };
 
@@ -99,31 +109,27 @@ export const isUserAuthentic = async ({
   const user = await User.findOne({ userName: userName });
   if (!user) return false;
 
-  return user.password === password;
-};
-
-export const updateToken = async ({
-  userName,
-  token,
-}: {
-  userName: string;
-  token: string;
-}) =>
-  await User.findOneAndUpdate({ userName: userName }, { accessToken: token });
-
-export const removeToken = async (token: string) => {
-  const { userName } = decodeToken(token);
-  return await User.findOneAndUpdate(
-    { userName: userName },
-    { accessToken: null }
-  );
+  const passHash = sha256.hmac(user.dsalt, password);
+  return user.password === passHash;
 };
 
 export const isAuthToken = async (token: string) => {
-  const { userName, accessToken } = decodeToken(token);
-  const user = !userName ? null : await User.findOne({ userName: userName });
+  const { userName, accessToken, userId } = decodeToken(token);
 
-  if (!user?.accessToken) return false;
+  if (!userName || !accessToken || !userId) return false;
 
-  return accessToken === user.accessToken;
+  return true;
+};
+
+export const ensureAuthenticated = async (req, res, next) => {
+  const authCookie = req.cookies?.[tokenName];
+
+  if (!authCookie || !isAuthToken(authCookie)) {
+    return res.status(401).redirect("/api/auth/login");
+  }
+
+  const { userId } = decodeToken(authCookie);
+  req.userId = userId;
+
+  return next();
 };

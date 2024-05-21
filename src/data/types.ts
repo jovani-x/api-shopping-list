@@ -29,6 +29,7 @@ export interface IUser extends ILoginValues {
 
 export type AuthUser = {
   userName: string | null;
+  userId: string | null;
   accessToken: string | null;
 };
 
@@ -39,3 +40,8 @@ export type UserServiceType = {
   updateToken: Function;
   isAuthToken: Function;
 };
+
+export enum UserRole {
+  owner = "OWNER",
+  buyer = "BUYER",
+}
