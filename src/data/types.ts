@@ -45,3 +45,7 @@ export enum UserRole {
   owner = "OWNER",
   buyer = "BUYER",
 }
+
+export enum UserRequest {
+  becomeFriend = "BECOME FRIEND",
+}

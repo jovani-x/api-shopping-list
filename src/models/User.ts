@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { UserRole } from "../data/types.js";
+import { UserRole, UserRequest } from "../data/types.js";
 
 const UserSchema = new mongoose.Schema({
   userName: {
@@ -19,6 +19,19 @@ const UserSchema = new mongoose.Schema({
     required: true,
   },
   accessToken: String,
+  users: [
+    {
+      userId: {
+        type: mongoose.Types.ObjectId,
+        required: true,
+        ref: "User",
+      },
+      userName: {
+        type: String,
+        required: true,
+      },
+    },
+  ],
   cards: [
     {
       cardId: {
@@ -30,6 +43,21 @@ const UserSchema = new mongoose.Schema({
         enum: UserRole,
         default: UserRole.buyer,
         required: true,
+      },
+    },
+  ],
+  requests: [
+    {
+      name: {
+        type: String,
+        enum: UserRequest,
+        default: UserRequest.becomeFriend,
+        required: true,
+      },
+      from: {
+        type: mongoose.Types.ObjectId,
+        required: true,
+        ref: "User",
       },
     },
   ],
