@@ -3,7 +3,7 @@ import {
   generateToken,
   decodeToken,
   isAuthToken,
-  tokenName,
+  ACCESS_TOKEN_NAME,
   addUser,
   getUserByName,
   findUserByEmail,
@@ -24,6 +24,7 @@ const userController = {
     }
 
     const user = await getUserByName(userName);
+
     if (user) {
       return res
         .status(400)
@@ -58,6 +59,7 @@ const userController = {
       }
 
       const user = await getUserByName(userName);
+
       if (!user?.id) {
         return res.status(400).json({ message: getTranslation("wrongData") });
       }
@@ -75,7 +77,7 @@ const userController = {
   },
   signout: async (req, res) => {
     const cookies = req.cookies;
-    const token = cookies?.[tokenName];
+    const token = cookies?.[ACCESS_TOKEN_NAME];
 
     try {
       if (!(await isAuthToken(token))) {

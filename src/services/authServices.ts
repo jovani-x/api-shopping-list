@@ -20,7 +20,7 @@ const getJWTSecret = () => {
   return process.env.JWT_SECRET || "";
 };
 
-export const tokenName = process.env.JWT_NAME || "authToken";
+export const ACCESS_TOKEN_NAME = process.env.JWT_NAME || "authToken";
 
 export const generateToken = ({
   userName,
@@ -67,7 +67,7 @@ export const prepareTokenCookie = ({
   age?: number;
 }): [string, string, CookieOptionType | undefined] => {
   return [
-    tokenName,
+    ACCESS_TOKEN_NAME,
     token,
     { httpOnly: true, maxAge: age, secure: true, sameSite: "strict" },
   ];
@@ -122,13 +122,13 @@ export const isAuthToken = async (token: string) => {
 };
 
 export const ensureAuthenticated = async (req, res, next) => {
-  const authCookie = req.cookies?.[tokenName];
+  const accessToken = req.cookies?.[ACCESS_TOKEN_NAME];
 
-  if (!authCookie || !isAuthToken(authCookie)) {
+  if (!accessToken || !isAuthToken(accessToken)) {
     return res.status(401).redirect("/api/auth/login");
   }
 
-  const { userId } = decodeToken(authCookie);
+  const { userId } = decodeToken(accessToken);
   req.userId = userId;
 
   return next();
