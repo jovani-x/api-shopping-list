@@ -1,5 +1,5 @@
 import { User } from "../models/User.js";
-import { IUser, UserRequest } from "../data/types.js";
+import { UserRequest } from "../data/types.js";
 
 export const getAllUsers = async ({
   userIds,
@@ -16,23 +16,6 @@ export const getUserById = async ({
   id: string;
   selectFields?: string[];
 }) => await User.findById(id).select(selectFields);
-
-// ownerId - id of user, who makes request
-// export const updateUser = async ({
-//   userId,
-//   newUserName,
-//   ownerId,
-// }: {
-//   userId: string;
-//   newUserName: string;
-//   ownerId: string;
-// }) =>
-//   await User.updateOne(
-//     { _id: ownerId, "users.userId": userId },
-//     {
-//       $set: { "users.$.customName": newUserName },
-//     }
-//   );
 
 export const deleteUser = async (userId: string, ownerId: string) => {
   const user = await User.findOneAndUpdate(
