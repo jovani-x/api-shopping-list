@@ -1,4 +1,5 @@
-import { getTranslation } from "../lib/utils.js";
+import type { Request, Response } from "express";
+import { getTranslation } from "@/lib/utils.js";
 import {
   getAllUsers,
   getUserById,
@@ -7,16 +8,16 @@ import {
   sendFriendRequest,
   approveFriendRequest,
   declineFriendRequest,
-} from "../services/friendServices.js";
+} from "@/services/friendServices.js";
 
 const friendController = {
   // friend list
-  getAllUsers: async (req, res) => {
-    const ownerId = req.userId;
+  getAllUsers: async (req: Request, res: Response) => {
+    const ownerId = req.body.userId;
 
     try {
       const owner = await getUserById({ id: ownerId, selectFields: ["users"] });
-      const userIds = owner?.users.map((el) => el.userId.toString());
+      const userIds = owner?.users.map((el) => el.userId.toString()) || [];
       const resObj = await getAllUsers({ userIds });
       res.status(200).json(resObj);
     } catch (err) {
@@ -25,7 +26,7 @@ const friendController = {
       });
     }
   },
-  getUser: async (req, res) => {
+  getUser: async (req: Request, res: Response) => {
     const userId = req.params.id;
 
     if (!userId) {
@@ -47,9 +48,9 @@ const friendController = {
       });
     }
   },
-  deleteUser: async (req, res) => {
+  deleteUser: async (req: Request, res: Response) => {
     const userId = req.params.id;
-    const ownerId = req.userId;
+    const ownerId = req.body.userId;
 
     if (!userId || !ownerId) {
       return res.status(400).json({ message: getTranslation("wrongData") });
@@ -68,9 +69,9 @@ const friendController = {
       });
     }
   },
-  inviteUser: async (req, res) => {
+  inviteUser: async (req: Request, res: Response) => {
     const newUserEmail = req.body.email;
-    const ownerId = req.userId;
+    const ownerId = req.body.userId;
 
     if (!newUserEmail || !ownerId) {
       return res.status(400).json({ message: getTranslation("wrongData") });
@@ -85,9 +86,9 @@ const friendController = {
       });
     }
   },
-  becomeFriend: async (req, res) => {
+  becomeFriend: async (req: Request, res: Response) => {
     const newUserEmail = req.body.userEmail;
-    const ownerId = req.userId;
+    const ownerId = req.body.userId;
 
     if (!newUserEmail || !ownerId) {
       return res.status(400).json({ message: getTranslation("wrongData") });
@@ -102,9 +103,9 @@ const friendController = {
       });
     }
   },
-  approveFriendship: async (req, res) => {
+  approveFriendship: async (req: Request, res: Response) => {
     const fromUserId = req.params.id;
-    const ownerId = req.userId;
+    const ownerId = req.body.userId;
 
     if (!fromUserId || !ownerId) {
       return res.status(400).json({ message: getTranslation("wrongData") });
@@ -125,9 +126,9 @@ const friendController = {
       });
     }
   },
-  declineFriendship: async (req, res) => {
+  declineFriendship: async (req: Request, res: Response) => {
     const fromUserId = req.params.id;
-    const ownerId = req.userId;
+    const ownerId = req.body.userId;
 
     if (!fromUserId || !ownerId) {
       return res.status(400).json({ message: getTranslation("wrongData") });

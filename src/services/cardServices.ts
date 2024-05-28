@@ -1,6 +1,6 @@
-import { Card } from "../models/Card.js";
-import { ICard, UserRole } from "../data/types.js";
-import { User } from "../models/User.js";
+import { ICard, UserRole } from "@/data/types.js";
+import { Card } from "@/models/Card.js";
+import { User } from "@/models/User.js";
 
 export const getAllCards = async (cardIds: string[]) =>
   await Card.find({ _id: { $in: cardIds } });

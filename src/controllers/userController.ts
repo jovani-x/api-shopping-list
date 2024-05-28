@@ -1,4 +1,5 @@
-import { getTranslation } from "../lib/utils.js";
+import type { Request, Response } from "express";
+import { getTranslation } from "@/lib/utils.js";
 import {
   generateToken,
   decodeToken,
@@ -11,11 +12,11 @@ import {
   getAccessDeniedResponse,
   expiredTokenCookie,
   prepareTokenCookie,
-} from "../services/authServices.js";
-import { isDevMode } from "../../app.js";
+} from "@/services/authServices.js";
+import { isDevMode } from "@/../app.js";
 
 const userController = {
-  signup: async (req, res) => {
+  signup: async (req: Request, res: Response) => {
     const newUser = req.body.user;
     const { userName, password, confirmPassword, email } = newUser;
 
@@ -41,7 +42,7 @@ const userController = {
       res.status(500).json({ message: err });
     }
   },
-  signin: async (req, res) => {
+  signin: async (req: Request, res: Response) => {
     const userName = req.body.userName;
     const password = req.body.password;
 
@@ -75,7 +76,7 @@ const userController = {
       });
     }
   },
-  signout: async (req, res) => {
+  signout: async (req: Request, res: Response) => {
     const cookies = req.cookies;
     const token = cookies?.[ACCESS_TOKEN_NAME];
 
@@ -97,7 +98,7 @@ const userController = {
       });
     }
   },
-  forget: async (req, res) => {
+  forget: async (req: Request, res: Response) => {
     const email = req.body.email;
 
     if (!email) {

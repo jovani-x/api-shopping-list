@@ -1,5 +1,5 @@
-import { User } from "../models/User.js";
-import { UserRequest } from "../data/types.js";
+import { User } from "@/models/User.js";
+import { UserRequest } from "@/data/types.js";
 
 export const getAllUsers = async ({
   userIds,
@@ -74,7 +74,7 @@ export const approveFriendRequest = async (
         users: {
           userId: fromUserId,
           userName: await getUserById({ id: fromUserId }).then(
-            (user) => user.userName
+            (user) => user?.userName
           ),
         },
       },
@@ -91,7 +91,7 @@ export const approveFriendRequest = async (
           users: {
             userId: ownerId,
             userName: await getUserById({ id: ownerId }).then(
-              (user) => user.userName
+              (user) => user?.userName
             ),
           },
         },

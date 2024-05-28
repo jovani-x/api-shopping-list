@@ -1,20 +1,11 @@
 import { sha256 } from "js-sha256";
-import { AuthUser, IUser } from "../data/types.js";
-import { getTranslation } from "../lib/utils.js";
+import type { Request, Response, NextFunction, CookieOptions } from "express";
+import { AuthUser, IUser } from "@/data/types.js";
+import { getTranslation } from "@/lib/utils.js";
 import { random } from "@lukeed/csprng";
-import { User } from "../models/User.js";
+import { User } from "@/models/User.js";
 
-type CookieOptionType = {
-  httpOnly?: boolean;
-  maxAge?: Number;
-  domain?: string;
-  path?: string;
-  expires?: Date;
-  secure?: boolean;
-  partitioned?: boolean;
-  priority?: "low" | "medium" | "high";
-  sameSite?: true | "lax" | "strict" | "none";
-};
+type CookieType = [string, string, CookieOptions];
 
 const getJWTSecret = () => {
   return process.env.JWT_SECRET || "";
@@ -65,19 +56,21 @@ export const prepareTokenCookie = ({
 }: {
   token: string;
   age?: number;
-}): [string, string, CookieOptionType | undefined] => {
+}): CookieType => {
   return [
     ACCESS_TOKEN_NAME,
     token,
-    { httpOnly: true, maxAge: age, secure: true, sameSite: "strict" },
+    {
+      httpOnly: true,
+      maxAge: age,
+      secure: true,
+      sameSite: "strict",
+    } as CookieOptions,
   ];
 };
 
-export const expiredTokenCookie = (): [
-  string,
-  string,
-  CookieOptionType | undefined
-] => prepareTokenCookie({ token: "", age: -1 });
+export const expiredTokenCookie = (): CookieType =>
+  prepareTokenCookie({ token: "", age: -1 });
 
 export const getAccessDeniedResponse = (response: any) => {
   return response
@@ -121,7 +114,11 @@ export const isAuthToken = async (token: string) => {
   return true;
 };
 
-export const ensureAuthenticated = async (req, res, next) => {
+export const ensureAuthenticated = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   const accessToken = req.cookies?.[ACCESS_TOKEN_NAME];
 
   if (!accessToken || !isAuthToken(accessToken)) {
@@ -129,7 +126,7 @@ export const ensureAuthenticated = async (req, res, next) => {
   }
 
   const { userId } = decodeToken(accessToken);
-  req.userId = userId;
+  req.body.userId = userId;
 
   return next();
 };

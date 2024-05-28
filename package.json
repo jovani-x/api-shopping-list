@@ -6,8 +6,7 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "npx tsx app.ts",
-    "dev": "npx nodemon --env-file=.env --env-file=.env.local ./app.ts"
+    "dev": "npx tsx --env-file=.env --env-file=.env.local  --watch app.ts"
   },
   "author": "",
   "license": "ISC",
@@ -19,9 +18,9 @@
     "mongoose": "^8.3.4"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.7",
+    "@types/express": "^4.17.21",
     "@types/node": "^20.12.7",
-    "nodemon": "^3.1.0",
-    "ts-node": "^10.9.2",
     "tsx": "^4.7.3"
   }
 }

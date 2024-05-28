@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import { UserRole, UserRequest } from "../data/types.js";
+import { IUser, UserRole, UserRequest } from "@/data/types.js";
 
-const UserSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema<IUser>({
   userName: {
     type: String,
     required: true,
@@ -63,4 +63,4 @@ const UserSchema = new mongoose.Schema({
   ],
 });
 
-export const User = mongoose.model("User", UserSchema);
+export const User = mongoose.model<IUser>("User", UserSchema);

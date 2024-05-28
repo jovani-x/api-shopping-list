@@ -23,8 +23,10 @@ export interface ILoginValues {
 export interface IUser extends ILoginValues {
   email: string;
   accessToken?: string | null;
-  // role?: RolesType
-  // expiredToken?: Date
+  dsalt: string;
+  users: { userId: string; userName: string }[];
+  cards: { cardId: string; role: UserRole }[];
+  requests: { name: string; from: string }[];
 }
 
 export type AuthUser = {

@@ -1,26 +1,26 @@
-import { ICard } from "../data/types.js";
-import { getTranslation } from "../lib/utils.js";
-
+import type { Request, Response } from "express";
+import { ICard } from "@/data/types.js";
+import { getTranslation } from "@/lib/utils.js";
 import {
   getAllCards,
   getCardById,
   createCard,
   updateCard,
   deleteCard,
-} from "../services/cardServices.js";
-import { getUserById } from "../services/friendServices.js";
+} from "@/services/cardServices.js";
+import { getUserById } from "@/services/friendServices.js";
 
 export const hasCardType = (card: any): card is ICard => {
   return typeof card === "object" && card.name && typeof card.name === "string";
 };
 
 const cardController = {
-  getAllCards: async (req, res) => {
-    const ownerId = req.userId;
+  getAllCards: async (req: Request, res: Response) => {
+    const ownerId = req.body.userId;
 
     try {
       const owner = await getUserById({ id: ownerId, selectFields: ["cards"] });
-      const cardIds = owner?.cards.map((el) => el.cardId);
+      const cardIds = owner?.cards.map((el) => el.cardId) || [];
       const resObj = await getAllCards(cardIds);
       res.status(200).json(resObj);
     } catch (err) {
@@ -29,13 +29,13 @@ const cardController = {
       });
     }
   },
-  getCard: async (req, res) => {
+  getCard: async (req: Request, res: Response) => {
     const id = req.params.id;
 
     if (!id) {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
-    const cardId = typeof id !== "string" ? id.toString() : id;
+    const cardId = typeof id !== "string" ? `${id}` : id;
     try {
       const card = await getCardById(cardId);
       if (!card) {
@@ -51,9 +51,9 @@ const cardController = {
       });
     }
   },
-  createCard: async (req, res) => {
+  createCard: async (req: Request, res: Response) => {
     const newCard = req.body.card;
-    const ownerId = req.userId;
+    const ownerId = req.body.userId;
 
     try {
       if (newCard && hasCardType(newCard)) {
@@ -68,13 +68,13 @@ const cardController = {
       });
     }
   },
-  updateCard: async (req, res) => {
+  updateCard: async (req: Request, res: Response) => {
     const id = req.params.id;
 
     if (!id) {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
-    const cardId = typeof id !== "string" ? id.toString() : id;
+    const cardId = typeof id !== "string" ? `${id}` : id;
 
     const newCardAttrs = req.body.card;
     try {
@@ -86,13 +86,13 @@ const cardController = {
       });
     }
   },
-  deleteCard: async (req, res) => {
+  deleteCard: async (req: Request, res: Response) => {
     const id = req.params.id;
 
     if (!id) {
       return res.status(400).json({ message: getTranslation("wrongData") });
     }
-    const cardId = typeof id !== "string" ? id.toString() : id;
+    const cardId = typeof id !== "string" ? `${id}` : id;
 
     try {
       const card = await deleteCard(cardId);

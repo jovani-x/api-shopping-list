@@ -1,1 +1,2 @@
-export const getTranslation = (text, ...args) => `translate: ${text}`;
+export const getTranslation = (text: string, ...args: any[]) =>
+  `translate: ${text}`;

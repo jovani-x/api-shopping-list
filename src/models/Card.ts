@@ -1,14 +1,15 @@
 import mongoose from "mongoose";
+import { IProduct, ICard } from "@/data/types.js";
 
 const jsonConf = {
   virtuals: true,
   versionKey: false,
-  transform: function (_doc, ret) {
+  transform: function (_doc: any, ret: any) {
     delete ret._id;
   },
 };
 
-const ProductScheme = new mongoose.Schema({
+const ProductScheme = new mongoose.Schema<IProduct>({
   name: {
     type: String,
     required: true,
@@ -40,9 +41,9 @@ ProductScheme.add({
   alternatives: [ProductScheme],
 });
 
-export const Product = mongoose.model("Product", ProductScheme);
+export const Product = mongoose.model<IProduct>("Product", ProductScheme);
 
-const CardScheme = new mongoose.Schema({
+const CardScheme = new mongoose.Schema<ICard>({
   name: {
     type: String,
     required: true,
@@ -54,4 +55,4 @@ const CardScheme = new mongoose.Schema({
 
 CardScheme.set("toJSON", jsonConf);
 
-export const Card = mongoose.model("Card", CardScheme);
+export const Card = mongoose.model<ICard>("Card", CardScheme);
