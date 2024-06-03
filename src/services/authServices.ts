@@ -1,9 +1,9 @@
 import { sha256 } from "js-sha256";
 import type { Request, Response, NextFunction, CookieOptions } from "express";
 import { AuthUser, IUser } from "@/data/types.js";
-import { getTranslation } from "@/lib/utils.js";
 import { random } from "@lukeed/csprng";
 import { User } from "@/models/User.js";
+import { t } from "i18next";
 
 type CookieType = [string, string, CookieOptions];
 
@@ -76,7 +76,7 @@ export const getAccessDeniedResponse = (response: any) => {
   return response
     .cookie(...expiredTokenCookie())
     .status(401)
-    .json({ message: getTranslation("unauthorizedRequest") });
+    .json({ message: t("unauthorizedRequest") });
 };
 
 export const addUser = async (newUser: IUser) => {

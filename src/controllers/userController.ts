@@ -1,5 +1,4 @@
 import type { Request, Response } from "express";
-import { getTranslation } from "@/lib/utils.js";
 import {
   generateToken,
   decodeToken,
@@ -14,6 +13,7 @@ import {
   prepareTokenCookie,
 } from "@/services/authServices.js";
 import { isDevMode } from "@/../app.js";
+import { t } from "i18next";
 
 const userController = {
   signup: async (req: Request, res: Response) => {
@@ -21,7 +21,7 @@ const userController = {
     const { userName, password, confirmPassword, email } = newUser;
 
     if (!userName || password !== confirmPassword || !email) {
-      return res.status(400).json({ message: getTranslation("wrongData") });
+      return res.status(400).json({ message: t("wrongData") });
     }
 
     const user = await getUserByName(userName);
@@ -29,14 +29,14 @@ const userController = {
     if (user) {
       return res
         .status(400)
-        .json({ message: getTranslation("loginAlreadyExists", { userName }) });
+        .json({ message: t("loginAlreadyExists", { userName }) });
     }
 
     try {
       const userName = await addUser(newUser);
       res.status(201).json({
         userName,
-        message: getTranslation("userHasBeenRegistered", { userName }),
+        message: t("userHasBeenRegistered", { userName }),
       });
     } catch (err) {
       res.status(500).json({ message: err });
@@ -47,22 +47,20 @@ const userController = {
     const password = req.body.password;
 
     if (!userName || !password) {
-      return res.status(400).json({ message: getTranslation("wrongData") });
+      return res.status(400).json({ message: t("wrongData") });
     }
 
     try {
       const isAuthUser = await isUserAuthentic({ userName, password });
 
       if (!isAuthUser) {
-        return res
-          .status(401)
-          .json({ message: getTranslation("wrongCredentials") });
+        return res.status(401).json({ message: t("wrongCredentials") });
       }
 
       const user = await getUserByName(userName);
 
       if (!user?.id) {
-        return res.status(400).json({ message: getTranslation("wrongData") });
+        return res.status(400).json({ message: t("wrongData") });
       }
 
       const token = generateToken({ userName, userId: user.id });
@@ -90,7 +88,7 @@ const userController = {
         .cookie(...expiredTokenCookie())
         .status(200)
         .json({
-          message: getTranslation("userHasBeenSignedOut", { userName }),
+          message: t("userHasBeenSignedOut", { userName }),
         });
     } catch (err) {
       return res.status(500).json({
@@ -102,22 +100,21 @@ const userController = {
     const email = req.body.email;
 
     if (!email) {
-      return res.status(400).json({ message: getTranslation("wrongData") });
+      return res.status(400).json({ message: t("wrongData") });
     }
 
     try {
       const user = await findUserByEmail(email);
       if (!user) {
         return res.status(404).json({
-          message: `${getTranslation("noUserExistsWithSuchEmail")}: "${email}"`,
+          message: `${t("noUserExistsWithSuchEmail")}: "${email}"`,
         });
       }
 
       return res.status(200).json({
-        message: `${getTranslation(
-          "furtherInstructionsHaveBeenSentToEmailAddress",
-          { email }
-        )}.${isDevMode ? ` (${getTranslation("itDoesNotWorkNow")})` : ""}`,
+        message: `${t("furtherInstructionsHaveBeenSentToEmailAddress", {
+          email,
+        })}.${isDevMode ? ` (${t("itDoesNotWorkNow")})` : ""}`,
       });
     } catch (err) {
       return res.status(500).json({

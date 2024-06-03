@@ -1,6 +1,5 @@
 import type { Request, Response } from "express";
 import { ICard } from "@/data/types.js";
-import { getTranslation } from "@/lib/utils.js";
 import {
   getAllCards,
   getCardById,
@@ -9,6 +8,7 @@ import {
   deleteCard,
 } from "@/services/cardServices.js";
 import { getUserById } from "@/services/friendServices.js";
+import { t } from "i18next";
 
 export const hasCardType = (card: any): card is ICard => {
   return typeof card === "object" && card.name && typeof card.name === "string";
@@ -33,14 +33,14 @@ const cardController = {
     const id = req.params.id;
 
     if (!id) {
-      return res.status(400).json({ message: getTranslation("wrongData") });
+      return res.status(400).json({ message: t("wrongData") });
     }
     const cardId = typeof id !== "string" ? `${id}` : id;
     try {
       const card = await getCardById(cardId);
       if (!card) {
         return res.status(404).json({
-          message: getTranslation("cardWithIdDoesnotExist", { id: cardId }),
+          message: t("cardWithIdDoesnotExist", { id: cardId }),
         });
       }
 
@@ -60,7 +60,7 @@ const cardController = {
         const resCard = await createCard(newCard, ownerId);
         return res.status(201).json({ card: resCard });
       } else {
-        return res.status(400).json({ message: getTranslation("wrongData") });
+        return res.status(400).json({ message: t("wrongData") });
       }
     } catch (err) {
       res.status(500).json({
@@ -72,7 +72,7 @@ const cardController = {
     const id = req.params.id;
 
     if (!id) {
-      return res.status(400).json({ message: getTranslation("wrongData") });
+      return res.status(400).json({ message: t("wrongData") });
     }
     const cardId = typeof id !== "string" ? `${id}` : id;
 
@@ -90,7 +90,7 @@ const cardController = {
     const id = req.params.id;
 
     if (!id) {
-      return res.status(400).json({ message: getTranslation("wrongData") });
+      return res.status(400).json({ message: t("wrongData") });
     }
     const cardId = typeof id !== "string" ? `${id}` : id;
 
