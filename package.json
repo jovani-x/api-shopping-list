@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx tsx --env-file=.env --env-file=.env.local  --watch app.ts"
+    "start": "npx tsx --env-file=.env --env-file=.env.local app.ts",
+    "dev": "npx tsx --env-file=.env --env-file=.env.local --watch app.ts < NUL"
   },
   "author": "",
   "license": "ISC",

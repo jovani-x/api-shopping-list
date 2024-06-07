@@ -3,7 +3,7 @@ import { UserRequest } from "@/data/types.js";
 
 export const getAllUsers = async ({
   userIds,
-  selectFields = ["userName"],
+  selectFields = ["userName", "cards"],
 }: {
   userIds: string[];
   selectFields?: string[];

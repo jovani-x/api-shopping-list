@@ -1,11 +1,14 @@
 import mongoose from "mongoose";
-import { IProduct, ICard } from "@/data/types.js";
+import { IProduct, ICard, UserRole } from "@/data/types.js";
 
 const jsonConf = {
   virtuals: true,
   versionKey: false,
   transform: function (_doc: any, ret: any) {
+    const id = ret._id.toString();
     delete ret._id;
+    delete ret.__v;
+    return { ...ret, id };
   },
 };
 
@@ -36,6 +39,7 @@ const ProductScheme = new mongoose.Schema<IProduct>({
 });
 
 ProductScheme.set("toJSON", jsonConf);
+ProductScheme.set("toObject", jsonConf);
 
 ProductScheme.add({
   alternatives: [ProductScheme],
@@ -51,8 +55,11 @@ const CardScheme = new mongoose.Schema<ICard>({
   notes: String,
   products: [ProductScheme],
   isDone: Boolean,
+  id: String,
+  userRole: String,
 });
 
 CardScheme.set("toJSON", jsonConf);
+CardScheme.set("toObject", jsonConf);
 
 export const Card = mongoose.model<ICard>("Card", CardScheme);

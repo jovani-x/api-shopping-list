@@ -6,6 +6,7 @@ import {
   createCard,
   updateCard,
   deleteCard,
+  addCardToUser,
 } from "@/services/cardServices.js";
 import { getUserById } from "@/services/friendServices.js";
 import { t } from "i18next";
@@ -22,7 +23,14 @@ const cardController = {
       const owner = await getUserById({ id: ownerId, selectFields: ["cards"] });
       const cardIds = owner?.cards.map((el) => el.cardId) || [];
       const resObj = await getAllCards(cardIds);
-      res.status(200).json(resObj);
+      const resultData = resObj.map((resCard) => {
+        const trCard = resCard.toObject();
+        const userRole = owner?.cards.find(
+          (card) => card.cardId === trCard.id
+        )?.role;
+        return { ...trCard, userRole };
+      });
+      res.status(200).json(resultData);
     } catch (err) {
       res.status(500).json({
         message: err,
@@ -31,20 +39,25 @@ const cardController = {
   },
   getCard: async (req: Request, res: Response) => {
     const id = req.params.id;
+    const ownerId = req.body.userId;
 
     if (!id) {
       return res.status(400).json({ message: t("wrongData") });
     }
     const cardId = typeof id !== "string" ? `${id}` : id;
     try {
-      const card = await getCardById(cardId);
-      if (!card) {
+      const trCard = await getCardById(cardId);
+      if (!trCard) {
         return res.status(404).json({
           message: t("cardWithIdDoesnotExist", { id: cardId }),
         });
       }
+      const owner = await getUserById({ id: ownerId, selectFields: ["cards"] });
 
-      res.status(200).json({ card: card });
+      const userRole = owner?.cards.find(
+        (card) => card.cardId === trCard.id
+      )?.role;
+      res.status(200).json({ card: { ...trCard, userRole } });
     } catch (err) {
       res.status(500).json({
         message: err,
@@ -97,6 +110,28 @@ const cardController = {
     try {
       const card = await deleteCard(cardId);
       res.status(200).json({ card });
+    } catch (err) {
+      res.status(500).json({
+        message: err,
+      });
+    }
+  },
+  addCardToUser: async (req: Request, res: Response) => {
+    const cardId = req.params.id;
+    const userId = req.body.targetUserId;
+    const userRole = req.body?.targetUserRole;
+
+    try {
+      if (cardId && userId) {
+        const resCardId = await addCardToUser({
+          cardId,
+          userId,
+          role: userRole,
+        });
+        return res.status(201).json({ cardId: resCardId });
+      } else {
+        return res.status(400).json({ message: t("wrongData") });
+      }
     } catch (err) {
       res.status(500).json({
         message: err,

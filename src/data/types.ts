@@ -13,6 +13,7 @@ export interface ICard {
   notes?: string;
   products?: IProduct[];
   isDone: boolean;
+  userRole?: UserRole;
 }
 
 export interface ILoginValues {
