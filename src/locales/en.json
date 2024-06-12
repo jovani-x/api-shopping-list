@@ -51,5 +51,9 @@
   "furtherInstructionsHaveBeenSentToEmailAddress": "Further instructions have been sent to {{email}} e-mail address",
   "itDoesNotWorkNow": "It doesn't work now",
   "userHasBeenSignedOut": "{{userName}} has been signed out",
-  "restoreAccess": "Restore access"
+  "restoreAccess": "Restore access",
+  "userHasBeenDeleted": "{{userName}} has been deleted",
+  "usersHaveBeenDeleted": "{{users}} have been deleted",
+  "friendRequestSent": "Friendship request has been sent",
+  "invitationSent": "Invitation has been sent"
 }

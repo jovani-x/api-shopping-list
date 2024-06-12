@@ -17,6 +17,14 @@ export const getUserById = async ({
   selectFields?: string[];
 }) => await User.findById(id).select(selectFields);
 
+export const getUserByEmail = async ({
+  email,
+  selectFields = ["userName"],
+}: {
+  email: string;
+  selectFields?: string[];
+}) => await User.findOne({ email: email }).select(selectFields);
+
 export const deleteUser = async (userId: string, ownerId: string) => {
   const user = await User.findOneAndUpdate(
     { _id: ownerId, "users.userId": userId },
@@ -28,29 +36,37 @@ export const deleteUser = async (userId: string, ownerId: string) => {
       },
     }
   ).select(["userName"]);
-  if (user) {
-    await User.findOneAndUpdate(
-      { _id: userId, "users.userId": ownerId },
-      {
-        $pull: {
-          users: {
-            userId: ownerId,
-          },
-        },
-      }
-    ).select(["userName"]);
-  }
 
-  return user;
+  const friend = await User.findOneAndUpdate(
+    { _id: userId, "users.userId": ownerId },
+    {
+      $pull: {
+        users: {
+          userId: ownerId,
+        },
+      },
+    }
+  ).select(["userName"]);
+
+  return friend;
 };
 
-export const sendFriendRequest = async (email: string, fromUserId: string) =>
+export const sendFriendRequest = async ({
+  email,
+  fromUserId,
+  text,
+}: {
+  email: string;
+  fromUserId: string;
+  text: string;
+}) =>
   await User.updateOne(
     { email },
     {
       $push: {
         requests: {
           name: UserRequest.becomeFriend,
+          text: text,
           from: fromUserId,
         },
       },
@@ -123,9 +139,45 @@ export const declineFriendRequest = async (
     }
   );
 
-export const sendInvitation = async (newUserEmail: string, owner: string) => {
+export const sendInvitation = async ({
+  email,
+  fromUserId,
+  text,
+}: {
+  email: string;
+  fromUserId: string;
+  text: string;
+}) => {
   // send email with nodemailer or email service API
   // to 'newUserEmail'
   // 'owner' invites you to join to our service
-  console.log(`Invitation has been sent to ${newUserEmail} from ${owner}`);
+  console.log(
+    `Invitation has been sent to ${email} from ${fromUserId} with message: ${text}`
+  );
+};
+
+export const getUserRequests = async (ownerId: string, type?: UserRequest) => {
+  const user = (
+    await User.findById(ownerId)
+      .select(["requests"])
+      .populate([
+        {
+          path: "requests.from",
+          select: "userName",
+          strictPopulate: false,
+          transform: function (doc, id) {
+            if (!doc) return id;
+
+            const { _id, ...obj } = doc?.toObject();
+            return { ...obj, id };
+          },
+        },
+      ])
+  )?.toObject();
+
+  const allRequests = user?.requests;
+
+  return !type
+    ? allRequests
+    : allRequests?.filter((r) => r.name === UserRequest.becomeFriend);
 };

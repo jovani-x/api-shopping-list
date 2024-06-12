@@ -51,5 +51,9 @@
   "furtherInstructionsHaveBeenSentToEmailAddress": "Wiadomość z dalszymi instrukcjami została wysłana na adres e-mail {{email}}",
   "itDoesNotWorkNow": "To nie działa teraz",
   "userHasBeenSignedOut": "Użytkownik {{userName}} został wylogowany",
-  "restoreAccess": "Odzyskać dostęp"
+  "restoreAccess": "Odzyskać dostęp",
+  "userHasBeenDeleted": "{{userName}} został(-a) usunięty(-a)",
+  "usersHaveBeenDeleted": "{{users}} zostali usunięci",
+  "friendRequestSent": "Prośba o dodanie do znajomych została wysłana",
+  "invitationSent": "Zaproszenie zostało wysłane"
 }

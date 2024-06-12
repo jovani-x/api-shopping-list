@@ -2,13 +2,16 @@ import type { Request, Response } from "express";
 import {
   getAllUsers,
   getUserById,
+  getUserByEmail,
   deleteUser,
   sendInvitation,
   sendFriendRequest,
   approveFriendRequest,
   declineFriendRequest,
+  getUserRequests,
 } from "@/services/friendServices.js";
 import { t } from "i18next";
+import { UserRequest } from "@/data/types.js";
 
 const friendController = {
   // friend list
@@ -48,6 +51,7 @@ const friendController = {
       });
     }
   },
+  // one user
   deleteUser: async (req: Request, res: Response) => {
     const userId = req.params.id;
     const ownerId = req.body.userId;
@@ -62,7 +66,40 @@ const friendController = {
         return res.status(400).json({ message: t("wrongData") });
       }
 
-      res.status(200).json({ user });
+      res.status(200).json({
+        message: t("userHasBeenDeleted", { userName: user.userName }),
+      });
+    } catch (err) {
+      res.status(500).json({
+        message: err,
+      });
+    }
+  },
+  // a few users
+  deleteUsers: async (req: Request, res: Response) => {
+    const ownerId = req.body.userId;
+    const userIds = req.body.friendIds;
+
+    if (!userIds || !userIds?.length) {
+      return res.status(400).json({ message: t("wrongData") });
+    }
+
+    try {
+      const result = await Promise.all(
+        userIds.map(async (userId: string) => {
+          const user = await deleteUser(userId, ownerId);
+          if (!user) {
+            return res.status(400).json({ message: t("wrongData") });
+          }
+          return user;
+        })
+      );
+
+      res.status(200).json({
+        message: t("usersHaveBeenDeleted", {
+          users: result.map((el) => el.userName).join(", "),
+        }),
+      });
     } catch (err) {
       res.status(500).json({
         message: err,
@@ -70,15 +107,31 @@ const friendController = {
     }
   },
   inviteUser: async (req: Request, res: Response) => {
-    const newUserEmail = req.body.email;
+    const newUserEmail = req.body.userEmail;
     const ownerId = req.body.userId;
+    const text = req.body.messageText;
 
     if (!newUserEmail || !ownerId) {
       return res.status(400).json({ message: t("wrongData") });
     }
 
     try {
-      await sendInvitation(newUserEmail, ownerId);
+      const user = await getUserByEmail({ email: newUserEmail });
+
+      if (!user) {
+        await sendInvitation({
+          email: newUserEmail,
+          fromUserId: ownerId,
+          text,
+        });
+      } else {
+        await sendFriendRequest({
+          email: newUserEmail,
+          fromUserId: ownerId,
+          text,
+        });
+      }
+
       res.status(200).json({ message: t("invitationSent") });
     } catch (err) {
       res.status(500).json({
@@ -89,13 +142,18 @@ const friendController = {
   becomeFriend: async (req: Request, res: Response) => {
     const newUserEmail = req.body.userEmail;
     const ownerId = req.body.userId;
+    const text = req.body.messageText;
 
     if (!newUserEmail || !ownerId) {
       return res.status(400).json({ message: t("wrongData") });
     }
 
     try {
-      await sendFriendRequest(newUserEmail, ownerId);
+      await sendFriendRequest({
+        email: newUserEmail,
+        fromUserId: ownerId,
+        text,
+      });
       res.status(200).json({ message: t("friendRequestSent") });
     } catch (err) {
       res.status(500).json({
@@ -139,6 +197,31 @@ const friendController = {
       }
 
       res.status(200).json({ message: t("friendRequestDeclined") });
+    } catch (err) {
+      res.status(500).json({
+        message: err,
+      });
+    }
+  },
+  getUserRequests: async (req: Request, res: Response) => {
+    const type = req.params.type;
+    const ownerId = req.body.userId;
+    const typeKey = !type
+      ? undefined
+      : Object.entries(UserRequest).filter(
+          ([_key, value]) => value === type
+        )?.[0][0];
+
+    if (!ownerId) {
+      return res.status(400).json({ message: t("wrongData") });
+    }
+
+    try {
+      const data = await getUserRequests(
+        ownerId,
+        !typeKey ? undefined : UserRequest[typeKey as keyof typeof UserRequest]
+      );
+      res.status(200).json({ requests: data });
     } catch (err) {
       res.status(500).json({
         message: err,

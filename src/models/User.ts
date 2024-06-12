@@ -59,6 +59,10 @@ const UserSchema = new mongoose.Schema<IUser>({
         required: true,
         ref: "User",
       },
+      text: {
+        type: String,
+        default: "",
+      },
     },
   ],
 });
