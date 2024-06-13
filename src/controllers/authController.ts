@@ -15,7 +15,7 @@ import {
 import { isDevMode } from "@/../app.js";
 import { t } from "i18next";
 
-const userController = {
+const authController = {
   signup: async (req: Request, res: Response) => {
     const newUser = req.body.user;
     const { userName, password, confirmPassword, email } = newUser;
@@ -124,4 +124,4 @@ const userController = {
   },
 };
 
-export default userController;
+export default authController;

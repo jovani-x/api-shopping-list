@@ -1,7 +1,7 @@
 import express from "express";
 import routes from "@/routes/routes.js";
 import cardRoutes from "@/routes/cardRoutes.js";
-import userRoutes from "@/routes/userRoutes.js";
+import authRoutes from "@/routes/authRoutes.js";
 import friendRoutes from "@/routes/friendRoutes.js";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
@@ -64,7 +64,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(handle(i18next));
 
 app.use("/", routes);
-app.use("/api/auth", userRoutes);
+app.use("/api/auth", authRoutes);
 app.use("/api/cards", ensureAuthenticated, cardRoutes);
 app.use("/api/users", ensureAuthenticated, friendRoutes);
 
