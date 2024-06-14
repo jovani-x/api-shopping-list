@@ -27,7 +27,12 @@ export interface IUser extends ILoginValues {
   dsalt: string;
   users: { userId: string; userName: string }[];
   cards: { cardId: string; role: UserRole }[];
-  requests: { name: string; from: string; _id?: string; text?: string }[];
+  requests: {
+    name: string;
+    from: string;
+    id?: string;
+    text?: string;
+  }[];
 }
 
 export type AuthUser = {

@@ -1,14 +1,12 @@
 import mongoose from "mongoose";
-import { IProduct, ICard, UserRole } from "@/data/types.js";
+import { IProduct, ICard } from "@/data/types.js";
 
-const jsonConf = {
+export const jsonConf = {
   virtuals: true,
   versionKey: false,
   transform: function (_doc: any, ret: any) {
-    const id = ret._id.toString();
-    delete ret._id;
-    delete ret.__v;
-    return { ...ret, id };
+    const { _id, __v, ...obj } = ret;
+    return { ...obj, id: _id.toString() };
   },
 };
 

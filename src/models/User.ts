@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { IUser, UserRole, UserRequest } from "@/data/types.js";
+import { jsonConf } from "@/models/Card.js";
 
 const UserSchema = new mongoose.Schema<IUser>({
   userName: {
@@ -66,5 +67,8 @@ const UserSchema = new mongoose.Schema<IUser>({
     },
   ],
 });
+
+UserSchema.set("toJSON", jsonConf);
+UserSchema.set("toObject", jsonConf);
 
 export const User = mongoose.model<IUser>("User", UserSchema);

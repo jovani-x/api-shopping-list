@@ -165,12 +165,6 @@ export const getUserRequests = async (ownerId: string, type?: UserRequest) => {
           path: "requests.from",
           select: "userName",
           strictPopulate: false,
-          transform: function (doc, id) {
-            if (!doc) return id;
-
-            const { _id, ...obj } = doc?.toObject();
-            return { ...obj, id };
-          },
         },
       ])
   )?.toObject();
