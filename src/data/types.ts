@@ -14,6 +14,10 @@ export interface ICard {
   products?: IProduct[];
   isDone: boolean;
   userRole?: UserRole;
+  status?: {
+    value: string;
+    userName?: string;
+  };
 }
 
 export interface ILoginValues {

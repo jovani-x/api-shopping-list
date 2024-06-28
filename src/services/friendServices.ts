@@ -175,3 +175,10 @@ export const getUserRequests = async (ownerId: string, type?: UserRequest) => {
     ? allRequests
     : allRequests?.filter((r) => r.name === UserRequest.becomeFriend);
 };
+
+export const getUserFriends = async ({ ownerId }: { ownerId: string }) => {
+  const owner = await getUserById({ id: ownerId, selectFields: ["users"] });
+  const userIds = owner?.users.map((el) => el.userId.toString()) || [];
+  const resObj = await getAllUsers({ userIds });
+  return resObj;
+};

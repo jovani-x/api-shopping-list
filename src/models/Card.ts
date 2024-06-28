@@ -55,6 +55,10 @@ const CardScheme = new mongoose.Schema<ICard>({
   isDone: Boolean,
   id: String,
   userRole: String,
+  status: {
+    value: String,
+    userName: String,
+  },
 });
 
 CardScheme.set("toJSON", jsonConf);

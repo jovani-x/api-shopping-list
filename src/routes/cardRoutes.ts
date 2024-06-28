@@ -14,6 +14,8 @@ router.put("/:id", cardController.updateCard);
 // delete
 router.delete("/:id", cardController.deleteCard);
 // add card to user
-router.post("/:id/addToUser", cardController.addCardToUser);
+router.post("/:id/share", cardController.addCardToUser);
+// remove card from user
+router.delete("/:id/share", cardController.removeCardFromUser);
 
 export default router;

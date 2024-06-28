@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import {
-  getAllUsers,
+  getUserFriends,
   getUserById,
   getUserByEmail,
   deleteUser,
@@ -11,7 +11,8 @@ import {
   getUserRequests,
 } from "@/services/friendServices.js";
 import { t } from "i18next";
-import { UserRequest } from "@/data/types.js";
+import { UserRequest, UserRole } from "@/data/types.js";
+import { getUserCards, removeCardFromUser } from "@/services/cardServices.js";
 
 const friendController = {
   // friend list
@@ -19,9 +20,7 @@ const friendController = {
     const ownerId = req.body.userId;
 
     try {
-      const owner = await getUserById({ id: ownerId, selectFields: ["users"] });
-      const userIds = owner?.users.map((el) => el.userId.toString()) || [];
-      const resObj = await getAllUsers({ userIds });
+      const resObj = await getUserFriends({ ownerId });
       res.status(200).json(resObj);
     } catch (err) {
       res.status(500).json({
@@ -65,6 +64,36 @@ const friendController = {
       if (!user) {
         return res.status(400).json({ message: t("wrongData") });
       }
+
+      // delete cards
+      const [userCards, ownerCards] = await Promise.all([
+        await getUserCards({ ownerId: userId }),
+        await getUserCards({ ownerId }),
+      ]);
+      const userCardsToRemove: string[] = [];
+      const ownerCardsToRemove: string[] = [];
+      userCards.map((userCard) => {
+        const { id } = userCard;
+
+        ownerCards.map((ownerCard) => {
+          if (ownerCard.id === id) {
+            if (userCard.userRole === UserRole.buyer) {
+              userCardsToRemove.push(id);
+            }
+            if (ownerCard.userRole === UserRole.buyer) {
+              ownerCardsToRemove.push(id);
+            }
+          }
+        });
+      });
+
+      await Promise.all([
+        await removeCardFromUser({ userId, cardIds: userCardsToRemove }),
+        await removeCardFromUser({
+          userId: ownerId,
+          cardIds: ownerCardsToRemove,
+        }),
+      ]);
 
       res.status(200).json({
         message: t("userHasBeenDeleted", { userName: user.userName }),

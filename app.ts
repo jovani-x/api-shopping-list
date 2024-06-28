@@ -3,7 +3,8 @@ import routes from "@/routes/routes.js";
 import cardRoutes from "@/routes/cardRoutes.js";
 import authRoutes from "@/routes/authRoutes.js";
 import friendRoutes from "@/routes/friendRoutes.js";
-import mongoose from "mongoose";
+import updatesRoutes from "@/routes/updatesRoutes.js";
+import { connectToDb } from "@/lib/utils.js";
 import cookieParser from "cookie-parser";
 import { ensureAuthenticated } from "@/services/authServices.js";
 import i18next from "i18next";
@@ -14,6 +15,8 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const ENV_MODE = process.env.ENV || "development";
 export const isDevMode = ENV_MODE === "development";
+
+await connectToDb();
 
 const i18nConfig = {
   locales: ["en", "pl"],
@@ -67,19 +70,8 @@ app.use("/", routes);
 app.use("/api/auth", authRoutes);
 app.use("/api/cards", ensureAuthenticated, cardRoutes);
 app.use("/api/users", ensureAuthenticated, friendRoutes);
+app.use("/api/updates-stream", ensureAuthenticated, updatesRoutes);
 
-const db_uri = process.env.DB_URI;
-
-if (!db_uri) {
-  console.error("There is no DB_URI in .env");
-  process.exit(1);
-}
-
-mongoose
-  .connect(db_uri)
-  .then(() =>
-    app.listen(PORT, () => {
-      console.log(`app listening on a port ${PORT}`);
-    })
-  )
-  .catch((err) => console.log(err));
+app.listen(PORT, () => {
+  console.log(`app listening on a port ${PORT}`);
+});

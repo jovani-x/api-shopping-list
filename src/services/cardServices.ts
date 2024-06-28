@@ -1,6 +1,7 @@
 import { ICard, UserRole } from "@/data/types.js";
 import { Card } from "@/models/Card.js";
 import { User } from "@/models/User.js";
+import { getUserById } from "@/services/friendServices.js";
 
 export const getAllCards = async (cardIds: string[]) =>
   await Card.find({ _id: { $in: cardIds } });
@@ -23,6 +24,7 @@ export const updateCard = async (id: string, newCard: ICard) =>
 export const deleteCard = async (id: string) =>
   (await Card.findByIdAndDelete(id))?.toObject();
 
+// share card with user
 export const addCardToUser = async ({
   userId,
   cardId,
@@ -46,3 +48,42 @@ export const addCardToUser = async ({
       new: true,
     }
   ).select(["userName"]);
+
+// stop sharing card with user
+export const removeCardFromUser = async ({
+  userId,
+  cardIds,
+}: {
+  userId: string;
+  cardIds: string[];
+}) =>
+  await User.findByIdAndUpdate(
+    userId,
+    {
+      $pull: {
+        cards: {
+          cardId: { $in: cardIds },
+        },
+      },
+    },
+    {
+      new: true,
+    }
+  ).select(["userName"]);
+
+export const getUserCards = async ({ ownerId }: { ownerId: string }) => {
+  const owner = await getUserById({
+    id: ownerId,
+    selectFields: ["cards"],
+  });
+  const cardIds = owner?.cards.map((el) => el.cardId) || [];
+  const resObj = await getAllCards(cardIds);
+  const resultData = resObj.map((resCard) => {
+    const trCard = resCard.toObject();
+    const userRole = owner?.cards.find(
+      (card) => card.cardId === trCard.id
+    )?.role;
+    return { ...trCard, userRole };
+  });
+  return resultData;
+};

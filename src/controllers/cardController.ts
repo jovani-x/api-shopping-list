@@ -1,12 +1,13 @@
 import type { Request, Response } from "express";
 import { ICard } from "@/data/types.js";
 import {
-  getAllCards,
+  getUserCards,
   getCardById,
   createCard,
   updateCard,
   deleteCard,
   addCardToUser,
+  removeCardFromUser,
 } from "@/services/cardServices.js";
 import { getUserById } from "@/services/friendServices.js";
 import { t } from "i18next";
@@ -20,16 +21,7 @@ const cardController = {
     const ownerId = req.body.userId;
 
     try {
-      const owner = await getUserById({ id: ownerId, selectFields: ["cards"] });
-      const cardIds = owner?.cards.map((el) => el.cardId) || [];
-      const resObj = await getAllCards(cardIds);
-      const resultData = resObj.map((resCard) => {
-        const trCard = resCard.toObject();
-        const userRole = owner?.cards.find(
-          (card) => card.cardId === trCard.id
-        )?.role;
-        return { ...trCard, userRole };
-      });
+      const resultData = await getUserCards({ ownerId });
       res.status(200).json(resultData);
     } catch (err) {
       res.status(500).json({
@@ -129,6 +121,26 @@ const cardController = {
           role: userRole,
         });
         return res.status(201).json({ cardId: resCardId });
+      } else {
+        return res.status(400).json({ message: t("wrongData") });
+      }
+    } catch (err) {
+      res.status(500).json({
+        message: err,
+      });
+    }
+  },
+  removeCardFromUser: async (req: Request, res: Response) => {
+    const cardId = req.params.id;
+    const userId = req.body.targetUserId;
+
+    try {
+      if (cardId && userId) {
+        const resCardId = await removeCardFromUser({
+          userId,
+          cardIds: [cardId],
+        });
+        return res.status(200).json({ cardId: resCardId });
       } else {
         return res.status(400).json({ message: t("wrongData") });
       }
