@@ -1,4 +1,12 @@
 import express from "express";
+import https from "https";
+import http from "http";
+import fs from "fs";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
+import tsConfigPaths from "tsconfig-paths";
+import tsConfig from "./tsconfig.json";
+import cors from "cors";
 import routes from "@/routes/routes.js";
 import cardRoutes from "@/routes/cardRoutes.js";
 import authRoutes from "@/routes/authRoutes.js";
@@ -11,10 +19,30 @@ import i18next from "i18next";
 import { LanguageDetector, handle } from "i18next-http-middleware";
 import Backend, { FsBackendOptions } from "i18next-fs-backend";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+tsConfigPaths.register({
+  baseUrl: "./",
+  paths: tsConfig.compilerOptions.paths,
+});
+
+const options = {
+  key: fs.readFileSync(
+    path.resolve(__dirname, "./src/keys/server.key"),
+    "utf8"
+  ),
+  cert: fs.readFileSync(
+    path.resolve(__dirname, "./src/keys/server.cert"),
+    "utf8"
+  ),
+};
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 const ENV_MODE = process.env.ENV || "development";
 export const isDevMode = ENV_MODE === "development";
+const APP_ORIGIN = process.env.APP_ORIGIN;
 
 await connectToDb();
 
@@ -40,7 +68,7 @@ i18next
     },
     detection: {
       caches: false, // ['cookie']
-      cookieSameSite: "Strict",
+      cookieSameSite: "Lax",
       order: ["cookie"],
       lookupCookie: "NEXT_LOCALE",
       convertDetectedLanguage: (l: string) => {
@@ -61,6 +89,25 @@ i18next
     saveMissing: true,
   });
 
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      const allowedOrigins = [APP_ORIGIN];
+      if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: "GET,POST,DELETE,PUT,PATCH,HEAD,OPTIONS",
+    allowedHeaders: "Content-Type,Authorization",
+    credentials: true,
+    preflightContinue: true,
+  })
+);
+app.options("*", cors(), function (_req, res, _next) {
+  res.status(200).end();
+});
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -72,6 +119,19 @@ app.use("/api/cards", ensureAuthenticated, cardRoutes);
 app.use("/api/users", ensureAuthenticated, friendRoutes);
 app.use("/api/updates-stream", ensureAuthenticated, updatesRoutes);
 
-app.listen(PORT, () => {
+https.createServer(options, app).listen(PORT, () => {
   console.log(`app listening on a port ${PORT}`);
 });
+// app.listen(PORT, () => {
+//   console.log(`app listening on a port ${PORT}`);
+// });
+
+// Create HTTP server for redirection to HTTPS
+http
+  .createServer((req, res) => {
+    res.writeHead(301, { location: `https://${req.headers.host}${req.url}` });
+    res.end();
+  })
+  .listen(80, () => {
+    console.log("HTTP Server is running on port 80 and redirecting to HTTPS");
+  });

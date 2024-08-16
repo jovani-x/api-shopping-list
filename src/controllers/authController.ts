@@ -9,7 +9,7 @@ import {
   findUserByEmail,
   isUserAuthentic,
   getAccessDeniedResponse,
-  expiredTokenCookie,
+  // expiredTokenCookie,
   prepareTokenCookie,
 } from "@/services/authServices.js";
 import { isDevMode } from "@/../app.js";
@@ -64,10 +64,19 @@ const authController = {
       }
 
       const token = generateToken({ userName, userId: user.id });
-      return res
+      const APP_ORIGIN = process.env.APP_ORIGIN;
+      const origin = req.headers?.origin ?? APP_ORIGIN;
+      res.setHeader("Access-Control-Allow-Origin", origin || "*");
+      res.setHeader("Access-Control-Allow-Credentials", "true");
+      res
         .cookie(...prepareTokenCookie({ token }))
         .status(200)
         .json({ userName });
+      // return res
+      //   .cookie(...prepareTokenCookie({ token }))
+      //   .status(200)
+      //   .json({ userName });
+      return res;
     } catch (err) {
       return res.status(500).json({
         message: err,
@@ -83,13 +92,16 @@ const authController = {
         return getAccessDeniedResponse(res);
       }
 
-      const userName = await decodeToken(token);
-      return res
-        .cookie(...expiredTokenCookie())
-        .status(200)
-        .json({
-          message: t("userHasBeenSignedOut", { userName }),
-        });
+      const user = await decodeToken(token);
+      return (
+        res
+          // .cookie(...expiredTokenCookie())
+          .clearCookie(ACCESS_TOKEN_NAME)
+          .status(200)
+          .json({
+            message: t("userHasBeenSignedOut", { userName: user?.userName }),
+          })
+      );
     } catch (err) {
       return res.status(500).json({
         message: err,

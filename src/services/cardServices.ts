@@ -18,7 +18,7 @@ export const createCard = async (newCard: ICard, userId?: string) => {
   return resCard;
 };
 
-export const updateCard = async (id: string, newCard: ICard) =>
+export const updateCard = async (id: string, newCard: Omit<ICard, "id">) =>
   (await Card.findByIdAndUpdate(id, newCard, { new: true }))?.toObject();
 
 export const deleteCard = async (id: string) =>

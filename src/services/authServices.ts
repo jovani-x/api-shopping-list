@@ -64,7 +64,7 @@ export const prepareTokenCookie = ({
       httpOnly: true,
       maxAge: age,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
     } as CookieOptions,
   ];
 };
@@ -73,10 +73,13 @@ export const expiredTokenCookie = (): CookieType =>
   prepareTokenCookie({ token: "", age: -1 });
 
 export const getAccessDeniedResponse = (response: any) => {
-  return response
-    .cookie(...expiredTokenCookie())
-    .status(401)
-    .json({ message: t("unauthorizedRequest") });
+  return (
+    response
+      // .cookie(...expiredTokenCookie())
+      .clearCookie(ACCESS_TOKEN_NAME)
+      .status(401)
+      .json({ message: t("unauthorizedRequest") })
+  );
 };
 
 export const addUser = async (newUser: IUser) => {
