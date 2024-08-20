@@ -1,12 +1,12 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 import { IProduct, ICard } from "@/data/types.js";
 
 export const jsonConf = {
   virtuals: true,
   versionKey: false,
-  transform: function (_doc: any, ret: any) {
+  transform: function (_doc: Document, ret: Record<string, unknown>) {
     const { _id, __v, ...obj } = ret;
-    return { ...obj, id: _id.toString() };
+    return { ...obj, id: _id?.toString() };
   },
 };
 

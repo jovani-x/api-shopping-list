@@ -9,7 +9,6 @@ import {
   findUserByEmail,
   isUserAuthentic,
   getAccessDeniedResponse,
-  // expiredTokenCookie,
   prepareTokenCookie,
 } from "@/services/authServices.js";
 import { isDevMode } from "@/../app.js";
@@ -72,10 +71,6 @@ const authController = {
         .cookie(...prepareTokenCookie({ token }))
         .status(200)
         .json({ userName });
-      // return res
-      //   .cookie(...prepareTokenCookie({ token }))
-      //   .status(200)
-      //   .json({ userName });
       return res;
     } catch (err) {
       return res.status(500).json({
@@ -93,15 +88,14 @@ const authController = {
       }
 
       const user = await decodeToken(token);
-      return (
-        res
-          // .cookie(...expiredTokenCookie())
-          .clearCookie(ACCESS_TOKEN_NAME)
-          .status(200)
-          .json({
-            message: t("userHasBeenSignedOut", { userName: user?.userName }),
-          })
-      );
+      return res
+        .clearCookie(ACCESS_TOKEN_NAME)
+        .status(200)
+        .json({
+          message: t("userHasBeenSignedOut", {
+            userName: user?.userName,
+          }),
+        });
     } catch (err) {
       return res.status(500).json({
         message: err,

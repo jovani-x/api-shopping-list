@@ -1,9 +1,10 @@
 import type { Request, Response } from "express";
 import { Card } from "@/models/Card.js";
 import { User } from "@/models/User.js";
-import { UserRequest } from "@/data/types.js";
+import { IUser, UserRequest, ICard } from "@/data/types.js";
 import { getUserCards } from "@/services/cardServices.js";
 import { getUserFriends, getUserRequests } from "@/services/friendServices.js";
+import { ChangeStreamUpdateDocument } from "mongodb";
 
 const INTERVAL_DURATION = 30000; // 30 sec
 
@@ -22,7 +23,7 @@ const updatesController = {
         data,
         eventName,
       }: {
-        data: { [key: string]: any };
+        data: { [key: string]: unknown };
         eventName?: string;
       }) => {
         const idStr = `id: ${new Date().valueOf()}\n`;
@@ -36,8 +37,8 @@ const updatesController = {
       const intervalObj: {
         duration: number;
         intervalIns: NodeJS.Timeout | undefined;
-        start: Function;
-        stop: Function;
+        start: () => void;
+        stop: () => void;
       } = {
         duration: INTERVAL_DURATION,
         intervalIns: undefined,
@@ -100,7 +101,9 @@ const updatesController = {
         }
       };
 
-      const changeHandle = async (change: any) => {
+      const changeHandle = async (
+        change: ChangeStreamUpdateDocument<IUser | ICard>
+      ) => {
         const { ns, operationType } = change;
         const collStr =
           operationType === "update" &&

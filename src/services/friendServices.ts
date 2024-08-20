@@ -26,7 +26,7 @@ export const getUserByEmail = async ({
 }) => await User.findOne({ email: email }).select(selectFields);
 
 export const deleteUser = async (userId: string, ownerId: string) => {
-  const user = await User.findOneAndUpdate(
+  await User.findOneAndUpdate(
     { _id: ownerId, "users.userId": userId },
     {
       $pull: {
@@ -100,7 +100,7 @@ export const approveFriendRequest = async (
     }
   );
   if (updatedOwner) {
-    const updatedUser = await User.updateOne(
+    await User.updateOne(
       { _id: fromUserId },
       {
         $push: {

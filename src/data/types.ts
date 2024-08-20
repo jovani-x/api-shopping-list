@@ -45,14 +45,6 @@ export type AuthUser = {
   accessToken: string | null;
 };
 
-export type UserServiceType = {
-  getUserByName: Function;
-  isUserAuthentic: Function;
-  addUser: Function;
-  updateToken: Function;
-  isAuthToken: Function;
-};
-
 export enum UserRole {
   owner = "OWNER",
   buyer = "BUYER",

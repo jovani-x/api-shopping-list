@@ -88,7 +88,10 @@ const friendController = {
       });
 
       await Promise.all([
-        await removeCardFromUser({ userId, cardIds: userCardsToRemove }),
+        await removeCardFromUser({
+          userId,
+          cardIds: userCardsToRemove,
+        }),
         await removeCardFromUser({
           userId: ownerId,
           cardIds: ownerCardsToRemove,

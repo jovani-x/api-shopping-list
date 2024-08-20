@@ -12,8 +12,13 @@ import {
 import { getUserById } from "@/services/friendServices.js";
 import { t } from "i18next";
 
-export const hasCardType = (card: any): card is ICard => {
-  return typeof card === "object" && card.name && typeof card.name === "string";
+export const hasCardType = (card: unknown): card is ICard => {
+  return (
+    typeof card === "object" &&
+    card !== null &&
+    "name" in card &&
+    typeof card.name === "string"
+  );
 };
 
 const cardController = {
@@ -44,7 +49,10 @@ const cardController = {
           message: t("cardWithIdDoesnotExist", { id: cardId }),
         });
       }
-      const owner = await getUserById({ id: ownerId, selectFields: ["cards"] });
+      const owner = await getUserById({
+        id: ownerId,
+        selectFields: ["cards"],
+      });
 
       const userRole = owner?.cards.find(
         (card) => card.cardId === trCard.id

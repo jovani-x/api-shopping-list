@@ -42,6 +42,7 @@ export const decodeToken = (encodedToken: string | null): AuthUser => {
       accessToken: encodedToken,
     };
   } catch (err) {
+    console.log(err);
     return {
       userName: null,
       userId: null,
@@ -72,14 +73,11 @@ export const prepareTokenCookie = ({
 export const expiredTokenCookie = (): CookieType =>
   prepareTokenCookie({ token: "", age: -1 });
 
-export const getAccessDeniedResponse = (response: any) => {
-  return (
-    response
-      // .cookie(...expiredTokenCookie())
-      .clearCookie(ACCESS_TOKEN_NAME)
-      .status(401)
-      .json({ message: t("unauthorizedRequest") })
-  );
+export const getAccessDeniedResponse = (response: Response) => {
+  return response
+    .clearCookie(ACCESS_TOKEN_NAME)
+    .status(401)
+    .json({ message: t("unauthorizedRequest") });
 };
 
 export const addUser = async (newUser: IUser) => {

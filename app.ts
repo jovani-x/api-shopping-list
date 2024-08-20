@@ -30,11 +30,11 @@ tsConfigPaths.register({
 const options = {
   key: fs.readFileSync(
     path.resolve(__dirname, "./src/keys/server.key"),
-    "utf8"
+    "utf8",
   ),
   cert: fs.readFileSync(
     path.resolve(__dirname, "./src/keys/server.cert"),
-    "utf8"
+    "utf8",
   ),
 };
 
@@ -103,7 +103,7 @@ app.use(
     allowedHeaders: "Content-Type,Authorization",
     credentials: true,
     preflightContinue: true,
-  })
+  }),
 );
 app.options("*", cors(), function (_req, res, _next) {
   res.status(200).end();
@@ -122,9 +122,6 @@ app.use("/api/updates-stream", ensureAuthenticated, updatesRoutes);
 https.createServer(options, app).listen(PORT, () => {
   console.log(`app listening on a port ${PORT}`);
 });
-// app.listen(PORT, () => {
-//   console.log(`app listening on a port ${PORT}`);
-// });
 
 // Create HTTP server for redirection to HTTPS
 http
