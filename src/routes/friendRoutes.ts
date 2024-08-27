@@ -11,10 +11,10 @@ router.get("/requests", friendController.getUserRequests);
 router.get("/requests/become-friend", friendController.getUserRequests);
 // get user
 router.get("/:id", friendController.getUser);
-// invite
+// invite friend or send friend-request:
+// - invite friend - if friend doesn't have app account, an email invitation is sent
+// - send friend-request - if friend has account, so request is visible in the app
 router.post("/invite", friendController.inviteUser);
-// send friend request
-router.post("/becomefriend", friendController.becomeFriend);
 // approve friendship
 router.put("/:id/friendship/request", friendController.approveFriendship);
 // delete friends (a few)

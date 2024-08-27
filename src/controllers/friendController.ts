@@ -171,28 +171,6 @@ const friendController = {
       });
     }
   },
-  becomeFriend: async (req: Request, res: Response) => {
-    const newUserEmail = req.body.userEmail;
-    const ownerId = req.body.userId;
-    const text = req.body.messageText;
-
-    if (!newUserEmail || !ownerId) {
-      return res.status(400).json({ message: t("wrongData") });
-    }
-
-    try {
-      await sendFriendRequest({
-        email: newUserEmail,
-        fromUserId: ownerId,
-        text,
-      });
-      res.status(200).json({ message: t("friendRequestSent") });
-    } catch (err) {
-      res.status(500).json({
-        message: err,
-      });
-    }
-  },
   approveFriendship: async (req: Request, res: Response) => {
     const fromUserId = req.params.id;
     const ownerId = req.body.userId;
