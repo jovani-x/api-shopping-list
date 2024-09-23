@@ -1,0 +1,68 @@
+services:
+  database:
+    env_file:
+      - path: .env.example # default
+        required: true
+      - path: .env # override if exists
+        required: false
+    environment:
+      MONGO_INITDB_DATABASE: ${DB_ADMIN_NAME}
+      MONGO_INITDB_ROOT_USERNAME: ${DB_ADMIN_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_ADMIN_PASS}
+      MONGO_REPLICA_SET_NAME: ${DB_REPLICA}
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_REPLICA: ${DB_REPLICA}
+    build:
+      context: .
+      dockerfile: /docker/db/Dockerfile
+      args:
+        MONGO_KEY_PATH: ${DB_KEY_PATH}
+        MONGO_KEY_NAME: ${DB_KEY_NAME}
+        MONGO_REPLICA_SET_NAME: ${DB_REPLICA}
+        MONGO_PORT: ${DB_PORT}
+    container_name: mongodb_cont
+    hostname: ${DB_HOST}
+    networks:
+      - network-db
+    restart: always
+    ports:
+      - ${DB_PORT}:27017
+    expose:
+      - ${DB_PORT}
+    volumes:
+      - "${DB_VOLUME_PATH}/${DB_NAME}:/data/db"
+    healthcheck:
+      test: 'mongosh --authenticationDatabase ${DB_ADMIN_NAME} -u ${DB_ADMIN_USER} -p ${DB_ADMIN_PASS} --eval "try { rs.status().ok } catch (e) { rs.initiate({ ''_id'': ''${DB_REPLICA}'', ''members'': [{ ''_id'': 0, ''host'': ''${DB_HOST}:27017'' }] }).ok }"'
+      interval: 10s
+      timeout: 30s
+      start_period: 1m
+      retries: 10
+  restapi:
+    container_name: restapi_cont
+    env_file:
+      - path: .env.example # default
+        required: true
+      - path: .env # override if exists
+        required: false
+    build:
+      context: .
+      dockerfile: /docker/restapi/Dockerfile
+      args:
+        PORT: ${PORT}
+    ports:
+      - ${PORT}:3001
+    networks:
+      - network-db
+    restart: always
+    depends_on:
+      - database
+    volumes:
+      - "${DB_VOLUME_PATH}/api_logs:/data/api_logs"
+
+networks:
+  network-db:
+    driver: bridge

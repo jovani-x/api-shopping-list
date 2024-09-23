@@ -1,0 +1,18 @@
+# Network interfaces
+net:
+  port: ${MONGO_PORT}
+  bindIpAll: true
+
+# Security settings
+security:
+  # Enabling authorization
+  authorization: enabled
+  # Keyfile for internal authentication
+  keyFile: ${MONGO_KEY_PATH}/${MONGO_KEY_NAME}
+
+# Replica Set configuration
+replication:
+  # Name of the replica set
+  replSetName: ${MONGO_REPLICA_SET_NAME}
+
+# Other options and settings...
