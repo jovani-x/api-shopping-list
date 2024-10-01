@@ -79,7 +79,7 @@ export const getUserCards = async ({ ownerId }: { ownerId: string }) => {
   const cardIds = owner?.cards.map((el) => el.cardId) || [];
   const resObj = await getAllCards(cardIds);
   const resultData = resObj.map((resCard) => {
-    const trCard = resCard.toObject();
+    const { _id, ...trCard } = resCard.toObject();
     const userRole = owner?.cards.find(
       (card) => card.cardId === trCard.id
     )?.role;
