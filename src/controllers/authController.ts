@@ -11,7 +11,6 @@ import {
   getAccessDeniedResponse,
   prepareTokenCookie,
 } from "@/services/authServices.js";
-import { isDevMode } from "@/../app.js";
 import { t } from "i18next";
 
 const authController = {
@@ -19,7 +18,7 @@ const authController = {
     const newUser = req.body.user;
     const { userName, password, confirmPassword, email } = newUser;
 
-    if (!userName || password !== confirmPassword || !email) {
+    if (!userName || !password || password !== confirmPassword || !email) {
       return res.status(400).json({ message: t("wrongData") });
     }
 
@@ -33,12 +32,12 @@ const authController = {
 
     try {
       const userName = await addUser(newUser);
-      res.status(201).json({
+      return res.status(201).json({
         userName,
         message: t("userHasBeenRegistered", { userName }),
       });
     } catch (err) {
-      res.status(500).json({ message: err });
+      return res.status(500).json({ message: err });
     }
   },
   signin: async (req: Request, res: Response) => {
@@ -58,11 +57,7 @@ const authController = {
 
       const user = await getUserByName(userName);
 
-      if (!user?.id) {
-        return res.status(400).json({ message: t("wrongData") });
-      }
-
-      const token = generateToken({ userName, userId: user.id });
+      const token = generateToken({ userName, userId: user?.id });
       const APP_ORIGIN = process.env.APP_ORIGIN;
       const origin = req.headers?.origin ?? APP_ORIGIN;
       res.setHeader("Access-Control-Allow-Origin", origin || "*");
@@ -120,7 +115,7 @@ const authController = {
       return res.status(200).json({
         message: `${t("furtherInstructionsHaveBeenSentToEmailAddress", {
           email,
-        })}.${isDevMode ? ` (${t("itDoesNotWorkNow")})` : ""}`,
+        })}.`,
       });
     } catch (err) {
       return res.status(500).json({
