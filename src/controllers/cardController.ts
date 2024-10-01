@@ -27,21 +27,17 @@ const cardController = {
 
     try {
       const resultData = await getUserCards({ ownerId });
-      res.status(200).json(resultData);
+      return res.status(200).json(resultData);
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
   },
   getCard: async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const cardId = req.params.id;
     const ownerId = req.body.userId;
 
-    if (!id) {
-      return res.status(400).json({ message: t("wrongData") });
-    }
-    const cardId = typeof id !== "string" ? `${id}` : id;
     try {
       const trCard = await getCardById(cardId);
       if (!trCard) {
@@ -57,9 +53,9 @@ const cardController = {
       const userRole = owner?.cards.find(
         (card) => card.cardId === trCard.id
       )?.role;
-      res.status(200).json({ card: { ...trCard, userRole } });
+      return res.status(200).json({ card: { ...trCard, userRole } });
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
@@ -76,42 +72,32 @@ const cardController = {
         return res.status(400).json({ message: t("wrongData") });
       }
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
   },
   updateCard: async (req: Request, res: Response) => {
-    const id = req.params.id;
-
-    if (!id) {
-      return res.status(400).json({ message: t("wrongData") });
-    }
-    const cardId = typeof id !== "string" ? `${id}` : id;
+    const cardId = req.params.id;
 
     const newCardAttrs = req.body.card;
     try {
       const updatedCard = await updateCard(cardId, newCardAttrs);
-      res.status(200).json({ card: updatedCard });
+      return res.status(200).json({ card: updatedCard });
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
   },
   deleteCard: async (req: Request, res: Response) => {
-    const id = req.params.id;
-
-    if (!id) {
-      return res.status(400).json({ message: t("wrongData") });
-    }
-    const cardId = typeof id !== "string" ? `${id}` : id;
+    const cardId = req.params.id;
 
     try {
       const card = await deleteCard(cardId);
-      res.status(200).json({ card });
+      return res.status(200).json({ card });
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
@@ -133,7 +119,7 @@ const cardController = {
         return res.status(400).json({ message: t("wrongData") });
       }
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
@@ -153,7 +139,7 @@ const cardController = {
         return res.status(400).json({ message: t("wrongData") });
       }
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
