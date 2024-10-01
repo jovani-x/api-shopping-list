@@ -5,11 +5,12 @@
   "main": "app.ts",
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx tsx --env-file=.env app.ts",
     "dev": "npx tsx --env-file=.env --watch app.ts < NUL",
     "lint": "npx eslint",
-    "format": "npx prettier --write ./src"
+    "format": "npx prettier --write ./src",
+    "test": "vitest",
+    "coverage": "vitest run --coverage"
   },
   "author": "",
   "license": "ISC",
@@ -32,11 +33,18 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.12.7",
+    "@types/supertest": "^6.0.2",
+    "@vitest/coverage-v8": "^2.1.1",
+    "dotenv": "^16.4.5",
     "eslint": "^9.9.0",
     "eslint-config-prettier": "^9.1.0",
     "globals": "^15.9.0",
     "prettier": "^3.3.3",
+    "supertest": "^7.0.0",
     "tsx": "^4.7.3",
-    "typescript-eslint": "^8.1.0"
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.1.0",
+    "vite-tsconfig-paths": "^5.0.1",
+    "vitest": "^2.1.1"
   }
 }

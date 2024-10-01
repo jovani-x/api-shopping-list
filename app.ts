@@ -27,16 +27,25 @@ tsConfigPaths.register({
   paths: tsConfig.compilerOptions.paths,
 });
 
-const options = {
-  key: fs.readFileSync(path.resolve(__dirname, "./certs/server.key"), "utf8"),
-  cert: fs.readFileSync(path.resolve(__dirname, "./certs/server.crt"), "utf8"),
-};
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 const ENV_MODE = process.env.ENV || "development";
 export const isDevMode = ENV_MODE === "development";
+const isTestMode = ENV_MODE === "test";
 const APP_ORIGIN = process.env.APP_ORIGIN;
+
+const options = isTestMode
+  ? {}
+  : {
+      key: fs.readFileSync(
+        path.resolve(__dirname, "./certs/server.key"),
+        "utf8"
+      ),
+      cert: fs.readFileSync(
+        path.resolve(__dirname, "./certs/server.crt"),
+        "utf8"
+      ),
+    };
 
 await connectToDb();
 
@@ -113,16 +122,20 @@ app.use("/api/cards", ensureAuthenticated, cardRoutes);
 app.use("/api/users", ensureAuthenticated, friendRoutes);
 app.use("/api/updates-stream", ensureAuthenticated, updatesRoutes);
 
-https.createServer(options, app).listen(PORT, () => {
-  console.log(`app listening on a port ${PORT}`);
-});
-
-// Create HTTP server for redirection to HTTPS
-http
-  .createServer((req, res) => {
-    res.writeHead(301, { location: `https://${req.headers.host}${req.url}` });
-    res.end();
-  })
-  .listen(80, () => {
-    console.log("HTTP Server is running on port 80 and redirecting to HTTPS");
+if (!isTestMode) {
+  https.createServer(options, app).listen(PORT, () => {
+    console.log(`app listening on a port ${PORT}`);
   });
+
+  // Create HTTP server for redirection to HTTPS
+  http
+    .createServer((req, res) => {
+      res.writeHead(301, { location: `https://${req.headers.host}${req.url}` });
+      res.end();
+    })
+    .listen(80, () => {
+      console.log("HTTP Server is running on port 80 and redirecting to HTTPS");
+    });
+}
+
+export default app;
