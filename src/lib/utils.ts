@@ -24,3 +24,6 @@ export const connectToDb = async () => {
     process.exit(1);
   });
 };
+
+export const disconnectFromDb = async (dbConnection: mongoose.Mongoose) =>
+  await dbConnection.disconnect();

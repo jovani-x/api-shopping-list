@@ -12,7 +12,7 @@ import cardRoutes from "@/routes/cardRoutes.js";
 import authRoutes from "@/routes/authRoutes.js";
 import friendRoutes from "@/routes/friendRoutes.js";
 import updatesRoutes from "@/routes/updatesRoutes.js";
-import { connectToDb } from "@/lib/utils.js";
+import { connectToDb, disconnectFromDb } from "@/lib/utils.js";
 import cookieParser from "cookie-parser";
 import { ensureAuthenticated } from "@/services/authServices.js";
 import i18next from "i18next";
@@ -47,7 +47,7 @@ const options = isTestMode
       ),
     };
 
-await connectToDb();
+export const dbConnection = await connectToDb();
 
 const i18nConfig = {
   locales: ["en", "pl"],
@@ -123,12 +123,12 @@ app.use("/api/users", ensureAuthenticated, friendRoutes);
 app.use("/api/updates-stream", ensureAuthenticated, updatesRoutes);
 
 if (!isTestMode) {
-  https.createServer(options, app).listen(PORT, () => {
+  const server = https.createServer(options, app).listen(PORT, () => {
     console.log(`app listening on a port ${PORT}`);
   });
 
   // Create HTTP server for redirection to HTTPS
-  http
+  const httpServer = http
     .createServer((req, res) => {
       res.writeHead(301, { location: `https://${req.headers.host}${req.url}` });
       res.end();
@@ -136,6 +136,18 @@ if (!isTestMode) {
     .listen(80, () => {
       console.log("HTTP Server is running on port 80 and redirecting to HTTPS");
     });
+
+  const gracefulShutdown = () => {
+    server.close(async () => {
+      httpServer.close();
+      await disconnectFromDb(dbConnection);
+      process.exit(0);
+    });
+  };
+
+  ["SIGINT", "SIGTERM", "SIGQUIT"].forEach((signal) =>
+    process.on(signal, gracefulShutdown)
+  );
 }
 
 export default app;
