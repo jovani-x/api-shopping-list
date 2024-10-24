@@ -1,9 +1,9 @@
 import { afterAll, beforeEach, vi } from "vitest";
 
 beforeEach(() => {
-  vi.resetModules();
+  vi.clearAllMocks();
 });
 
 afterAll(() => {
-  vi.clearAllMocks();
+  vi.resetAllMocks();
 });
