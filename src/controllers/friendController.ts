@@ -3,7 +3,8 @@ import {
   getUserFriends,
   getUserById,
   getUserByEmail,
-  deleteUser,
+  deleteUser as deleteFriend,
+  deleteUsers as deleteFriends,
   sendInvitation,
   sendFriendRequest,
   approveFriendRequest,
@@ -11,8 +12,15 @@ import {
   getUserRequests,
 } from "@/services/friendServices.js";
 import { t } from "i18next";
-import { UserRequest, UserRole } from "@/data/types.js";
+import { UserRequest, UserRole, ICard } from "@/data/types.js";
 import { getUserCards, removeCardFromUser } from "@/services/cardServices.js";
+import { dbConnection } from "@/../app.js";
+
+type UserCardsData = {
+  id: string; // userId
+  cards: ICard[];
+  cardsToRemove: string[]; // card ids
+};
 
 const friendController = {
   // friend list
@@ -21,19 +29,15 @@ const friendController = {
 
     try {
       const resObj = await getUserFriends({ ownerId });
-      res.status(200).json(resObj);
+      return res.status(200).json(resObj);
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
   },
   getUser: async (req: Request, res: Response) => {
     const userId = req.params.id;
-
-    if (!userId) {
-      return res.status(400).json({ message: t("wrongData") });
-    }
 
     try {
       const user = await getUserById({ id: userId });
@@ -43,9 +47,9 @@ const friendController = {
         });
       }
 
-      res.status(200).json(user);
+      return res.status(200).json(user);
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
@@ -59,13 +63,20 @@ const friendController = {
       return res.status(400).json({ message: t("wrongData") });
     }
 
+    const session = await dbConnection.startSession();
+    session.startTransaction();
+
     try {
-      const user = await deleteUser(userId, ownerId);
+      // delete user
+      const user = await deleteFriend(userId, ownerId);
       if (!user) {
-        return res.status(400).json({ message: t("wrongData") });
+        await session.abortTransaction();
+        return res
+          .status(500)
+          .json({ message: t("sorrySomethingWentWrongTryAgain") });
       }
 
-      // delete cards
+      // stop sharing cards with user
       const [userCards, ownerCards] = await Promise.all([
         await getUserCards({ ownerId: userId }),
         await getUserCards({ ownerId }),
@@ -98,11 +109,17 @@ const friendController = {
         }),
       ]);
 
-      res.status(200).json({
+      await session.commitTransaction();
+      await session.endSession();
+
+      return res.status(200).json({
         message: t("userHasBeenDeleted", { userName: user.userName }),
       });
     } catch (err) {
-      res.status(500).json({
+      await session.abortTransaction();
+      await session.endSession();
+
+      return res.status(500).json({
         message: err,
       });
     }
@@ -110,30 +127,89 @@ const friendController = {
   // a few users
   deleteUsers: async (req: Request, res: Response) => {
     const ownerId = req.body.userId;
-    const userIds = req.body.friendIds;
+    const userIds = req.body.friendIds as string[];
 
     if (!userIds || !userIds?.length) {
       return res.status(400).json({ message: t("wrongData") });
     }
 
+    const session = await dbConnection.startSession();
+    session.startTransaction();
+
     try {
-      const result = await Promise.all(
-        userIds.map(async (userId: string) => {
-          const user = await deleteUser(userId, ownerId);
-          if (!user) {
-            return res.status(400).json({ message: t("wrongData") });
-          }
-          return user;
-        })
+      // delete users
+      const users = (await deleteFriends(userIds, ownerId)) as unknown as {
+        userName: string;
+      }[];
+
+      if (!users || !users?.length) {
+        await session.abortTransaction();
+        return res
+          .status(500)
+          .json({ message: t("sorrySomethingWentWrongTryAgain") });
+      }
+
+      // stop sharing cards with users
+      const userPromise = (id: string) =>
+        new Promise((resolve, reject) => {
+          getUserCards({ ownerId: id }).then((userCards) => {
+            if (userCards) {
+              resolve({ id, cards: userCards, cardsToRemove: [] });
+            } else {
+              reject(t("sorrySomethingWentWrongTryAgain"));
+            }
+          });
+        });
+
+      const ownerCards = await getUserCards({ ownerId });
+
+      const usersCards = (await Promise.all(
+        userIds.map((id) => userPromise(id))
+      )) as UserCardsData[];
+
+      const ownerCardsToRemove: string[] = [];
+      usersCards.map((userItem) => {
+        const id = userItem?.id;
+
+        userItem?.cards.map((userCard) => {
+          ownerCards.map((ownerCard) => {
+            if (ownerCard.id === id) {
+              if (userCard.userRole === UserRole.buyer) {
+                userItem.cardsToRemove.push(id);
+              }
+              if (ownerCard.userRole === UserRole.buyer) {
+                ownerCardsToRemove.push(id);
+              }
+            }
+          });
+        });
+      });
+
+      await removeCardFromUser({
+        userId: ownerId,
+        cardIds: ownerCardsToRemove,
+      });
+
+      await Promise.all(
+        usersCards.map((userItem) =>
+          removeCardFromUser({
+            userId: userItem.id,
+            cardIds: userItem.cardsToRemove,
+          })
+        )
       );
 
-      res.status(200).json({
-        message: t("usersHaveBeenDeleted", {
-          users: result.map((el) => el.userName).join(", "),
-        }),
+      await session.commitTransaction();
+      await session.endSession();
+
+      return res.status(200).json({
+        message: t("usersHaveBeenDeleted", { users: users.join(", ") }),
       });
     } catch (err) {
-      res.status(500).json({
+      await session.abortTransaction();
+      await session.endSession();
+
+      return res.status(500).json({
         message: err,
       });
     }
@@ -150,6 +226,8 @@ const friendController = {
     try {
       const user = await getUserByEmail({ email: newUserEmail });
 
+      // user with such email doesn't exist in db - sendInvitation
+      // exists - sendFriendRequest
       if (!user) {
         await sendInvitation({
           email: newUserEmail,
@@ -164,9 +242,9 @@ const friendController = {
         });
       }
 
-      res.status(200).json({ message: t("invitationSent") });
+      return res.status(200).json({ message: t("invitationSent") });
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
@@ -175,19 +253,15 @@ const friendController = {
     const fromUserId = req.params.id;
     const ownerId = req.body.userId;
 
-    if (!fromUserId || !ownerId) {
-      return res.status(400).json({ message: t("wrongData") });
-    }
-
     try {
       const reqAns = await approveFriendRequest(fromUserId, ownerId);
       if (!reqAns) {
         return res.status(400).json({ message: t("wrongData") });
       }
 
-      res.status(200).json({ message: t("friendRequestApproved") });
+      return res.status(200).json({ message: t("friendRequestApproved") });
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
@@ -196,24 +270,21 @@ const friendController = {
     const fromUserId = req.params.id;
     const ownerId = req.body.userId;
 
-    if (!fromUserId || !ownerId) {
-      return res.status(400).json({ message: t("wrongData") });
-    }
-
     try {
       const reqAns = await declineFriendRequest(fromUserId, ownerId);
       if (!reqAns) {
         return res.status(400).json({ message: t("wrongData") });
       }
 
-      res.status(200).json({ message: t("friendRequestDeclined") });
+      return res.status(200).json({ message: t("friendRequestDeclined") });
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }
   },
   getUserRequests: async (req: Request, res: Response) => {
+    // all requests or certain type
     const type = req.params.type;
     const ownerId = req.body.userId;
     const typeKey = !type
@@ -231,9 +302,9 @@ const friendController = {
         ownerId,
         !typeKey ? undefined : UserRequest[typeKey as keyof typeof UserRequest]
       );
-      res.status(200).json({ requests: data });
+      return res.status(200).json({ requests: data });
     } catch (err) {
-      res.status(500).json({
+      return res.status(500).json({
         message: err,
       });
     }

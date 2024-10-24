@@ -46,9 +46,41 @@ export const deleteUser = async (userId: string, ownerId: string) => {
         },
       },
     }
-  ).select(["userName"]);
+  )
+    .select(["userName"])
+    ?.lean();
 
   return friend;
+};
+
+export const deleteUsers = async (userIds: string[], ownerId: string) => {
+  // Remove multiple users from the owner's "users" array
+  await User.findOneAndUpdate(
+    { _id: ownerId },
+    {
+      $pull: {
+        users: {
+          userId: { $in: userIds },
+        },
+      },
+    }
+  ).select(["userName"]);
+
+  // For each user in the userIds array, remove the owner from their "users" array
+  const friends = await User.updateMany(
+    { _id: { $in: userIds }, "users.userId": ownerId },
+    {
+      $pull: {
+        users: {
+          userId: ownerId,
+        },
+      },
+    }
+  )
+    .select(["userName"])
+    ?.lean();
+
+  return friends;
 };
 
 export const sendFriendRequest = async ({
