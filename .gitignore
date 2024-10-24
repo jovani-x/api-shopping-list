@@ -23,7 +23,8 @@ yarn-error.log*
 
 .env
 # local env files
-.env*.local
+.env.*
+!.env.example
 
 # vercel
 .vercel
@@ -36,3 +37,4 @@ package-lock.json
 
 TO-DO.md
 /src/keys
+.vscode/
