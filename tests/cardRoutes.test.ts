@@ -41,9 +41,13 @@ vi.mock("@/services/authServices.js", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/utils.js", () => ({
-  connectToDb: vi.fn(),
-}));
+vi.mock("@/lib/utils.js", async (importOriginal) => {
+  const actual = (await importOriginal()) as object;
+  return {
+    ...actual,
+    connectToDb: vi.fn(),
+  };
+});
 
 vi.mock("i18next", async (importOriginal) => {
   const actual = (await importOriginal()) as object;

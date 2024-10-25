@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+import mongoose, { Document } from "mongoose";
 
 // logger
 export const logMsg = (...args: unknown[]) => {
@@ -25,5 +25,17 @@ export const connectToDb = async () => {
   });
 };
 
+// disconnect from db
 export const disconnectFromDb = async (dbConnection: mongoose.Mongoose) =>
   await dbConnection.disconnect();
+
+// data transformation and cleaning
+export const jsonTransform = (_doc: Document, ret: Record<string, unknown>) => {
+  const { _id, __v, ...obj } = ret;
+  return { ...obj, id: _id?.toString() };
+};
+
+// check value: null | string
+export const shouldBeNullOrString = (value: unknown) => {
+  return value === null || typeof value === "string";
+};

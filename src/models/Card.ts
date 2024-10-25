@@ -1,13 +1,11 @@
-import mongoose, { Document } from "mongoose";
+import mongoose from "mongoose";
 import { IProduct, ICard } from "@/data/types.js";
+import { jsonTransform, shouldBeNullOrString } from "@/lib/utils.js";
 
 export const jsonConf = {
   virtuals: true,
   versionKey: false,
-  transform: function (_doc: Document, ret: Record<string, unknown>) {
-    const { _id, __v, ...obj } = ret;
-    return { ...obj, id: _id?.toString() };
-  },
+  transform: jsonTransform,
 };
 
 const ProductScheme = new mongoose.Schema<IProduct>({
@@ -17,21 +15,19 @@ const ProductScheme = new mongoose.Schema<IProduct>({
   },
   photo: {
     type: String,
-    required: function () {
-      return (
-        typeof this.photo === "undefined" ||
-        (this.photo != null && typeof this.photo != "string")
-      );
+    validate: {
+      validator: shouldBeNullOrString,
+      message: "Must be either null or a string",
     },
+    required: false,
   },
   note: {
     type: String,
-    required: function () {
-      return (
-        typeof this.note === "undefined" ||
-        (this.note != null && typeof this.note != "string")
-      );
+    validate: {
+      validator: shouldBeNullOrString,
+      message: "Must be either null or a string",
     },
+    required: false,
   },
   got: Boolean,
 });
